@@ -1,0 +1,82 @@
+[
+  {
+    "id": "ps_httpfailure_test_001",
+    "name": "ProxyScrape HTTP 001",
+    "description": "IP-authenticated HTTP proxy.",
+    "protocol": "http",
+    "address": "156.228.176.73:8100",
+    "userEnabled": true
+  },
+  {
+    "id": "ps_http_002",
+    "name": "ProxyScrape HTTP 002",
+    "description": "IP-authenticated HTTP proxy.",
+    "protocol": "http",
+    "address": "154.213.203.36:3129",
+    "userEnabled": true
+  },
+  {
+    "id": "ps_http_003",
+    "name": "ProxyScrape HTTP 003",
+    "description": "IP-authenticated HTTP proxy.",
+    "protocol": "http",
+    "address": "156.242.46.92:3129",
+    "userEnabled": true
+  },
+  {
+    "id": "ps_http_004",
+    "name": "ProxyScrape HTTP 004",
+    "description": "IP-authenticated HTTP proxy.",
+    "protocol": "http",
+    "address": "156.253.164.129:3129",
+    "userEnabled": true
+  },
+  {
+    "id": "ps_http_005",
+    "name": "ProxyScrape HTTP 005",
+    "description": "IP-authenticated HTTP proxy.",
+    "protocol": "http",
+    "address": "156.253.166.17:3129",
+    "userEnabled": true
+  },
+  {
+    "id": "ps_http_006",
+    "name": "ProxyScrape HTTP 006",
+    "description": "IP-authenticated HTTP proxy.",
+    "protocol": "http",
+    "address": "156.228.90.235:3129",
+    "userEnabled": true
+  },
+  {
+    "id": "ps_http_007",
+    "name": "ProxyScrape HTTP 007",
+    "description": "IP-authenticated HTTP proxy.",
+    "protocol": "http",
+    "address": "156.242.46.14:3129",
+    "userEnabled": true
+  },
+  {
+    "id": "ps_http_008",
+    "name": "ProxyScrape HTTP 008",
+    "description": "IP-authenticated HTTP proxy.",
+    "protocol": "http",
+    "address": "156.228.109.43:3129",
+    "userEnabled": true
+  },
+  {
+    "id": "ps_http_009",
+    "name": "ProxyScrape HTTP 009",
+    "description": "IP-authenticated HTTP proxy.",
+    "protocol": "http",
+    "address": "156.228.94.241:3129",
+    "userEnabled": true
+  },
+  {
+    "id": "ps_http_010",
+    "name": "ProxyScrape HTTP 010",
+    "description": "IP-authenticated HTTP proxy.",
+    "protocol": "http",
+    "address": "156.233.72.201:3129",
+    "userEnabled": true
+  }
+]

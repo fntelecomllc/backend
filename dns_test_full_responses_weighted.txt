@@ -1,0 +1,300 @@
+Full response for request 1:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:811::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:23+02:00","durationMs":113}]}
+
+Full response for request 2:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["172.217.19.142","2a00:1450:4006:80d::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:23+02:00","durationMs":113}]}
+
+Full response for request 3:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.201.14","2a00:1450:4006:80e::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:23+02:00","durationMs":97}]}
+
+Full response for request 4:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["216.58.209.78","2a00:1450:4003:80d::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:23+02:00","durationMs":84}]}
+
+Full response for request 5:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["216.58.209.78","2a00:1450:4003:80d::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:24+02:00","durationMs":83}]}
+
+Full response for request 6:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["172.217.171.206","2a00:1450:4006:805::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:24+02:00","durationMs":99}]}
+
+Full response for request 7:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.201.14","2a00:1450:4006:80a::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:24+02:00","durationMs":94}]}
+
+Full response for request 8:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.78","2a00:1450:4003:80d::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:24+02:00","durationMs":98}]}
+
+Full response for request 9:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4003:80e::200e"],"resolver":"8.8.8.8:53","timestamp":"2025-05-19T15:18:24+02:00","durationMs":27}]}
+
+Full response for request 10:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:811::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:24+02:00","durationMs":97}]}
+
+Full response for request 11:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:80d::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:24+02:00","durationMs":115}]}
+
+Full response for request 12:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.78","2a00:1450:4003:80d::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:24+02:00","durationMs":85}]}
+
+Full response for request 13:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["172.217.19.142","2a00:1450:4006:80d::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:24+02:00","durationMs":107}]}
+
+Full response for request 14:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4003:80e::200e"],"resolver":"8.8.8.8:53","timestamp":"2025-05-19T15:18:25+02:00","durationMs":54}]}
+
+Full response for request 15:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4003:80d::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:25+02:00","durationMs":30}]}
+
+Full response for request 16:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.201.14","2a00:1450:4006:803::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:25+02:00","durationMs":93}]}
+
+Full response for request 17:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.78","2a00:1450:4003:80d::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:25+02:00","durationMs":84}]}
+
+Full response for request 18:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4003:80e::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:25+02:00","durationMs":143}]}
+
+Full response for request 19:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.110","2a00:1450:4006:80d::200e"],"resolver":"8.8.8.8:53","timestamp":"2025-05-19T15:18:25+02:00","durationMs":49}]}
+
+Full response for request 20:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4003:80e::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:25+02:00","durationMs":107}]}
+
+Full response for request 21:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:811::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:25+02:00","durationMs":97}]}
+
+Full response for request 22:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["216.58.209.78","2a00:1450:4003:80d::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:26+02:00","durationMs":31}]}
+
+Full response for request 23:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.184.174","2a00:1450:4003:801::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:26+02:00","durationMs":78}]}
+
+Full response for request 24:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4003:80e::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:26+02:00","durationMs":108}]}
+
+Full response for request 25:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.78","2a00:1450:4003:80d::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:26+02:00","durationMs":84}]}
+
+Full response for request 26:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4003:80e::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:26+02:00","durationMs":137}]}
+
+Full response for request 27:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["216.58.205.206","2a00:1450:4006:803::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:26+02:00","durationMs":95}]}
+
+Full response for request 28:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["172.217.171.206","2a00:1450:4006:803::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:26+02:00","durationMs":96}]}
+
+Full response for request 29:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.110","2a00:1450:4006:80d::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:26+02:00","durationMs":109}]}
+
+Full response for request 30:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:812::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:27+02:00","durationMs":101}]}
+
+Full response for request 31:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.78","2a00:1450:4003:80c::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:27+02:00","durationMs":101}]}
+
+Full response for request 32:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:80d::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:27+02:00","durationMs":104}]}
+
+Full response for request 33:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:811::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:27+02:00","durationMs":89}]}
+
+Full response for request 34:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["172.217.19.142","2a00:1450:4006:80d::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:27+02:00","durationMs":105}]}
+
+Full response for request 35:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4003:80e::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:27+02:00","durationMs":129}]}
+
+Full response for request 36:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["216.58.209.78","2a00:1450:4003:80c::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:27+02:00","durationMs":82}]}
+
+Full response for request 37:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:811::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:28+02:00","durationMs":91}]}
+
+Full response for request 38:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["216.58.209.78","2a00:1450:4003:801::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:28+02:00","durationMs":85}]}
+
+Full response for request 39:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["172.217.19.142","2a00:1450:4006:80d::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:28+02:00","durationMs":104}]}
+
+Full response for request 40:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:80d::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:28+02:00","durationMs":110}]}
+
+Full response for request 41:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:812::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:28+02:00","durationMs":107}]}
+
+Full response for request 42:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:80d::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:28+02:00","durationMs":109}]}
+
+Full response for request 43:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:80d::200e"],"resolver":"8.8.8.8:53","timestamp":"2025-05-19T15:18:28+02:00","durationMs":29}]}
+
+Full response for request 44:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.78","2a00:1450:4003:80d::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:28+02:00","durationMs":81}]}
+
+Full response for request 45:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["172.217.171.206","2a00:1450:4006:806::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:29+02:00","durationMs":30}]}
+
+Full response for request 46:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["216.58.205.206","2a00:1450:4006:811::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:29+02:00","durationMs":29}]}
+
+Full response for request 47:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4003:80e::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:29+02:00","durationMs":115}]}
+
+Full response for request 48:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4003:80e::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:29+02:00","durationMs":121}]}
+
+Full response for request 49:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:80d::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:29+02:00","durationMs":105}]}
+
+Full response for request 50:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["172.217.19.142","2a00:1450:4003:80e::200e"],"resolver":"8.8.8.8:53","timestamp":"2025-05-19T15:18:29+02:00","durationMs":34}]}
+
+Full response for request 51:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.78","2a00:1450:4006:803::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:29+02:00","durationMs":31}]}
+
+Full response for request 52:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4003:80e::200e"],"resolver":"8.8.8.8:53","timestamp":"2025-05-19T15:18:29+02:00","durationMs":66}]}
+
+Full response for request 53:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:811::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:29+02:00","durationMs":28}]}
+
+Full response for request 54:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:812::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:29+02:00","durationMs":87}]}
+
+Full response for request 55:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:80d::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:30+02:00","durationMs":112}]}
+
+Full response for request 56:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:80d::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:30+02:00","durationMs":110}]}
+
+Full response for request 57:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:812::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:30+02:00","durationMs":29}]}
+
+Full response for request 58:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["216.58.209.78","2a00:1450:4003:80d::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:30+02:00","durationMs":83}]}
+
+Full response for request 59:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.78","2a00:1450:4003:80d::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:30+02:00","durationMs":80}]}
+
+Full response for request 60:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["172.217.19.46","2a00:1450:4006:811::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:30+02:00","durationMs":29}]}
+
+Full response for request 61:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:811::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:30+02:00","durationMs":88}]}
+
+Full response for request 62:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4003:80e::200e"],"resolver":"8.8.8.8:53","timestamp":"2025-05-19T15:18:30+02:00","durationMs":65}]}
+
+Full response for request 63:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["216.58.205.206","2a00:1450:4006:811::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:31+02:00","durationMs":33}]}
+
+Full response for request 64:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:805::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:31+02:00","durationMs":29}]}
+
+Full response for request 65:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:811::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:31+02:00","durationMs":30}]}
+
+Full response for request 66:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["172.217.19.46","2a00:1450:4007:813::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:31+02:00","durationMs":95}]}
+
+Full response for request 67:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["172.217.171.206","2a00:1450:4006:80e::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:31+02:00","durationMs":29}]}
+
+Full response for request 68:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.78","2a00:1450:4003:801::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:31+02:00","durationMs":78}]}
+
+Full response for request 69:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["172.217.168.174","2a00:1450:4003:80c::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:31+02:00","durationMs":89}]}
+
+Full response for request 70:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["172.217.171.206","2a00:1450:4006:803::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:31+02:00","durationMs":29}]}
+
+Full response for request 71:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:811::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:31+02:00","durationMs":90}]}
+
+Full response for request 72:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["172.217.19.142","2a00:1450:4006:80d::200e"],"resolver":"8.8.8.8:53","timestamp":"2025-05-19T15:18:31+02:00","durationMs":34}]}
+
+Full response for request 73:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.201.14","2a00:1450:4006:80a::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:31+02:00","durationMs":98}]}
+
+Full response for request 74:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.201.14","2a00:1450:4006:805::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:32+02:00","durationMs":29}]}
+
+Full response for request 75:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:811::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:32+02:00","durationMs":357}]}
+
+Full response for request 76:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:806::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:32+02:00","durationMs":92}]}
+
+Full response for request 77:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:80e::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:32+02:00","durationMs":94}]}
+
+Full response for request 78:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:80d::200e"],"resolver":"8.8.8.8:53","timestamp":"2025-05-19T15:18:32+02:00","durationMs":44}]}
+
+Full response for request 79:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["172.217.171.206","2a00:1450:4006:803::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:32+02:00","durationMs":94}]}
+
+Full response for request 80:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.78","2a00:1450:4003:801::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:32+02:00","durationMs":82}]}
+
+Full response for request 81:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.110","2a00:1450:4006:80d::200e"],"resolver":"8.8.8.8:53","timestamp":"2025-05-19T15:18:33+02:00","durationMs":34}]}
+
+Full response for request 82:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:812::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:33+02:00","durationMs":98}]}
+
+Full response for request 83:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:80d::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:33+02:00","durationMs":139}]}
+
+Full response for request 84:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:811::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:33+02:00","durationMs":35}]}
+
+Full response for request 85:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.78","2a00:1450:4006:812::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:33+02:00","durationMs":31}]}
+
+Full response for request 86:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:805::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:33+02:00","durationMs":98}]}
+
+Full response for request 87:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.78","2a00:1450:4006:80a::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:33+02:00","durationMs":29}]}
+
+Full response for request 88:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:80d::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:33+02:00","durationMs":114}]}
+
+Full response for request 89:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:80d::200e"],"resolver":"8.8.8.8:53","timestamp":"2025-05-19T15:18:34+02:00","durationMs":40}]}
+
+Full response for request 90:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:80d::200e"],"resolver":"8.8.8.8:53","timestamp":"2025-05-19T15:18:34+02:00","durationMs":38}]}
+
+Full response for request 91:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["172.217.19.46","2a00:1450:4006:805::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:34+02:00","durationMs":93}]}
+
+Full response for request 92:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.78","2a00:1450:4003:80c::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:34+02:00","durationMs":94}]}
+
+Full response for request 93:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["216.58.209.78","2a00:1450:4003:80d::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:34+02:00","durationMs":80}]}
+
+Full response for request 94:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:805::200e"],"resolver":"1.1.1.1:53","timestamp":"2025-05-19T15:18:34+02:00","durationMs":34}]}
+
+Full response for request 95:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.110","2a00:1450:4003:80e::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:34+02:00","durationMs":124}]}
+
+Full response for request 96:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.251.37.174","2a00:1450:4006:803::200e"],"resolver":"https://cloudflare-dns.com/dns-query","timestamp":"2025-05-19T15:18:34+02:00","durationMs":130}]}
+
+Full response for request 97:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4006:80d::200e"],"resolver":"8.8.8.8:53","timestamp":"2025-05-19T15:18:35+02:00","durationMs":42}]}
+
+Full response for request 98:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4003:80e::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:35+02:00","durationMs":123}]}
+
+Full response for request 99:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.238","2a00:1450:4003:80e::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:35+02:00","durationMs":113}]}
+
+Full response for request 100:
+{"results":[{"domain":"google.com","status":"Resolved","ips":["142.250.200.110","2a00:1450:4003:80e::200e"],"resolver":"https://dns.google/dns-query","timestamp":"2025-05-19T15:18:35+02:00","durationMs":121}]}
+

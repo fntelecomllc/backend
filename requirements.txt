@@ -1,0 +1,517 @@
+DomainFlow Campaign API & Backend Requirements
+Architectural Context
+DomainFlow is an enterprise-grade, modular lead generation and domain validation platform. All campaign types—HTTP Validation, DNS Validation, Domain Generation, and Lead Generation—must follow a unified, extensible CRUD design. The architecture is designed for multi-user operation, high scalability, robust auditability, and seamless UI/backend integration.
+Key system principles:
+
+Each campaign is a first-class object, uniquely identified, independently traceable, and associated with full per-domain/per-lead status and results.
+
+Campaigns are strictly separated by type, but unified in field conventions and endpoint patterns for easy frontend mapping and future extensibility.
+
+All state changes and uploads are tracked via audit logs and per-domain records for transparency and error recovery.
+
+APIs must support real-time progress, filtering, sorting, pagination, file uploads, and exporting results.
+
+Status fields are rich, covering all meaningful operational states (pending, active, paused, completed, failed, cancelled, error, retrying).
+
+The design allows for seamless future addition of new campaign types (e.g., Lead Generation), additional input modes, and new fields without breaking API/UI contracts.
+
+Every requirement below should be interpreted as the minimum baseline; do not remove any field or endpoint, and use this as the single source of truth for all backend and data modeling.
+
+1. HTTP Validation Campaign
+Purpose:
+Qualifies domains for liveness and HTTP properties using specified personas and proxies.
+
+Fields to Store:
+
+campaignId (UUID, unique)
+
+campaignName (string)
+
+description (string, optional)
+
+campaignType = "HTTP Validation" (string/enum)
+
+status (enum: pending, active, paused, completed, failed, cancelled, error, retrying)
+
+createdAt (timestamp)
+
+updatedAt (timestamp)
+
+createdBy (userId, string/int)
+
+ownerId (userId, string/int; for multi-user)
+
+domainInputSource (uploaded file path, fileId, or direct input)
+
+sourceMode (string, future-proofing for multiple input sources)
+
+initialNumberOfDomains (int, optional)
+
+processedDomainsCount (int, updated live)
+
+httpPersonaId (string, e.g. "default")
+
+proxyAssignmentId (string: "direct" or proxy group ID)
+
+notes (string, optional)
+
+tags (array of strings, optional)
+
+uploadHistory (array of upload events: filename, fileId, uploadedAt, uploadedBy)
+
+progress (percentage, computed)
+
+resultFilePath (string, for result export)
+
+auditLog (array: action, userId, timestamp, description)
+
+Per-Domain Tracking:
+
+domain (string)
+
+validationStatus (enum: pending, processing, done, failed, retried, skipped)
+
+lastCheckedAt (timestamp)
+
+errorDetails (string, optional)
+
+httpStatusCode (int, optional)
+
+resultData (object, per-domain HTTP validation result)
+
+Endpoints:
+
+POST /api/v1/campaigns/http (create)
+
+GET /api/v1/campaigns/http (list, filter, paginate)
+
+GET /api/v1/campaigns/http/{campaignId} (details)
+
+PUT /api/v1/campaigns/http/{campaignId} (update)
+
+DELETE /api/v1/campaigns/http/{campaignId} (delete)
+
+POST /api/v1/campaigns/http/{campaignId}/upload (upload .txt file)
+
+GET /api/v1/campaigns/http/{campaignId}/results (export/download)
+
+POST /api/v1/campaigns/http/{campaignId}/retry (retry failed domains)
+
+GET /api/v1/campaigns/http/{campaignId}/domains (per-domain status)
+
+GET /api/v1/campaigns/http?status=active&ownerId=... (list w/ filtering)
+
+2. DNS Validation Campaign
+Purpose:
+Validates domain DNS properties using assigned DNS persona and proxy, with robust per-domain status tracking.
+
+Fields to Store:
+(Same as HTTP, with DNS-specific fields)
+
+campaignId (UUID)
+
+campaignName
+
+description
+
+campaignType = "DNS Validation"
+
+status
+
+createdAt, updatedAt, createdBy, ownerId
+
+domainInputSource, sourceMode
+
+initialNumberOfDomains
+
+processedDomainsCount
+
+dnsPersonaId (string, e.g. "default")
+
+proxyAssignmentId
+
+notes, tags, uploadHistory, progress, resultFilePath, auditLog
+
+Per-Domain Tracking:
+
+domain
+
+validationStatus
+
+lastCheckedAt
+
+errorDetails
+
+dnsRecordData (object: resolved IPs, CNAME, etc.)
+
+Endpoints:
+(Same as HTTP, replace http with dns.)
+
+3. Domain Generation Campaign
+Purpose:
+Generates domain candidates based on complex, configurable patterns, charset, and TLDs. Supports resume, uniqueness, and strategy flags for large-scale or deterministic generation.
+
+Fields to Store:
+
+campaignId (UUID)
+
+campaignName
+
+description
+
+campaignType = "Domain Generation"
+
+status
+
+createdAt, updatedAt, createdBy, ownerId
+
+pattern (string/enum, e.g. "prefix variable")
+
+constantPart (string)
+
+prefixVariableLength (int)
+
+charSet (string)
+
+tlds (array of strings)
+
+maxTheoreticalDomains (int, computed for preview)
+
+targetDomainsToGenerate (int, optional)
+
+processedDomainsCount (int)
+
+generationStrategy (string/enum, e.g. brute-force, dictionary)
+
+enforceUniqueness (bool)
+
+resumeFlag (bool, support resumable batches)
+
+proxyAssignmentId
+
+notes, tags, progress, resultFilePath, auditLog
+
+Per-Domain Tracking:
+
+domain
+
+generationStatus (pending, generated, skipped, error)
+
+errorDetails
+
+generatedAt (timestamp)
+
+Endpoints:
+(Same as above, using /generation.)
+
+4. Lead Generation Campaign (Upcoming / For Reference)
+Purpose:
+Combines validated domain results, keyword sets, and personas to extract, score, and export leads. Extensible to support future scoring and context logic.
+
+Fields to Store:
+
+campaignId (UUID)
+
+campaignName
+
+description
+
+campaignType = "Lead Generation"
+
+status
+
+createdAt, updatedAt, createdBy, ownerId
+
+inputCampaignIds (array of campaignIds; links to validated DNS/HTTP/gen campaigns)
+
+keywordSetIds (array)
+
+httpPersonaId, dnsPersonaId
+
+proxyAssignmentId
+
+notes, tags, progress, resultFilePath, auditLog
+
+Per-Lead Tracking:
+
+domain
+
+url
+
+keywordMatches (array: {keyword, matchContext})
+
+score (float/int, optional)
+
+extractionStatus (pending, processing, done, error)
+
+errorDetails
+
+lastProcessedAt (timestamp)
+
+Endpoints:
+
+POST /api/v1/campaigns/lead
+
+GET /api/v1/campaigns/lead
+
+GET /api/v1/campaigns/lead/{campaignId}
+
+PUT /api/v1/campaigns/lead/{campaignId}
+
+DELETE /api/v1/campaigns/lead/{campaignId}
+
+GET /api/v1/campaigns/lead/{campaignId}/results
+
+5. General Requirements (All Campaigns)
+Campaign status:
+Enum supports all states: pending, active, paused, completed, failed, cancelled, error, retrying.
+
+Audit logging:
+Every creation, update, upload, retry, or delete is logged with user and timestamp.
+
+Multi-user fields:
+createdBy, ownerId (support for account/user separation)
+
+Per-domain/per-lead progress:
+All campaign types must allow status lookup, batch progress calculation, and export.
+
+Progress bar & metrics:
+Expose backend fields for UI to display real-time completion, counts, and errors.
+
+Result export:
+Download endpoint for campaign results (CSV/JSON).
+
+Structured errors:
+All endpoints return errors as {code, message, field} for frontend validation.
+
+Filtering, sorting, pagination:
+Required on all list/get endpoints for performance and frontend search.
+
+Notes/tags:
+Optional metadata fields for UI/UX and campaign management.
+
+Secure file uploads:
+Accept only .txt, validate contents, log all uploads with user/timestamp.
+
+Retry logic:
+API support for re-processing only failed domains in validation campaigns.
+
+Campaign history endpoint:
+Expose change log/history per campaign for UI troubleshooting and compliance.
+
+====================================================
+Goal: Implement the foundational Campaign system, starting with the "HTTP Validation Campaign" as the first concrete example. This will involve creating the necessary data models, database/storage interaction (even if mocked or in-memory initially), CRUD API endpoints, and business logic for campaign management and execution.
+
+High-Level Plan:
+
+Project Structure for Campaigns:
+Create a new package: internal/campaigns.
+Inside internal/campaigns, create sub-packages for common logic and per-campaign-type logic, e.g.:
+internal/campaigns/models.go: Core campaign structs, status enums, common fields.
+internal/campaigns/store.go: Interface for campaign data storage (CRUD operations for campaigns and their items). Initially, an in-memory implementation.
+internal/campaigns/httpvalidation/: Specific logic for HTTP Validation Campaigns.
+models.go: Structs specific to HTTP Validation Campaign items/results.
+handler.go: API Handlers for HTTP Validation Campaigns.
+service.go: Business logic for managing and processing HTTP Validation Campaigns.
+Core Campaign Modeling (`internal/campaigns/models.go`):
+CampaignStatus enum: pending, active, paused, completed, failed, cancelled, error, retrying.
+BaseCampaign struct: Contains common fields listed in "General Requirements" and repeated in each campaign type (e.g., CampaignID, CampaignName, CampaignType, Status, CreatedAt, UpdatedAt, CreatedBy, OwnerID, Description, Notes, Tags, AuditLog, Progress, ResultFilePath).
+CampaignAuditEntry struct: Action, UserID, Timestamp, Description.
+UploadEvent struct: Filename, FileID, UploadedAt, UploadedBy.
+HTTP Validation Campaign Modeling:
+In internal/campaigns/httpvalidation/models.go:
+HTTPValidationCampaign struct: Embed campaigns.BaseCampaign and add specific fields: DomainInputSource, SourceMode, InitialNumberOfDomains, ProcessedDomainsCount, HTTPPersonaID, ProxyAssignmentID.
+HTTPValidationCampaignItem struct: Domain, ValidationStatus (enum: pending, processing, done, failed, retried, skipped), LastCheckedAt, ErrorDetails, HTTPStatusCode, ResultData (this could be httpvalidator.ValidationResult or a subset).
+Campaign Store (`internal/campaigns/store.go`):
+Define CampaignStore interface:
+CreateCampaign(campaign interface{}) error
+GetCampaign(campaignID string, campaignType string) (interface{}, error)
+UpdateCampaign(campaign interface{}) error
+DeleteCampaign(campaignID string, campaignType string) error
+ListCampaigns(campaignType string, filters map[string]string, pagination_opts) ([]interface{}, error)
+AddCampaignItem(campaignID string, item interface{}) error
+UpdateCampaignItem(campaignID string, itemID string, updates interface{}) error // itemID could be domain name
+GetCampaignItems(campaignID string, filters_opts) ([]interface{}, error)
+GetCampaignResultPath(campaignID string) (string, error)
+LogAuditEvent(campaignID string, entry campaigns.CampaignAuditEntry) error
+Implement InMemoryCampaignStore satisfying this interface. This store will use maps to hold campaigns and items in memory. Data will not persist across server restarts with this initial implementation.
+API Handler Structure (`internal/api/campaign_http_validation_handlers.go` - new file):
+Create CampaignHandler struct (similar to APIHandler) that holds the CampaignStore and other necessary services (like AppConfig, ProxyManager, and the httpvalidator.HTTPValidator service, contentfetcher.ContentFetcher). This might eventually merge or interact closely with APIHandler. For now, let's assume we extend APIHandler or create a new one that embeds it.
+This suggests APIHandler in handler_base.go might need to be extended to include a CampaignStore instance.
+HTTP Validation Campaign API Endpoints (stubs first, then implementation):
+POST /api/v1/campaigns/http (create):
+Takes HTTPValidationCampaign creation payload.
+Validates input.
+Sets defaults (ID, timestamps, status=pending, createdBy from auth context if available).
+Calls CampaignStore.CreateCampaign().
+Logs audit event.
+GET /api/v1/campaigns/http (list):
+Calls CampaignStore.ListCampaigns(). Handles filtering, pagination (stub these advanced features initially).
+GET /api/v1/campaigns/http/{campaignId} (details):
+Calls CampaignStore.GetCampaign().
+PUT /api/v1/campaigns/http/{campaignId} (update):
+Updates mutable fields (e.g., CampaignName, Description, Notes, Tags).
+Calls CampaignStore.UpdateCampaign().
+Logs audit event.
+DELETE /api/v1/campaigns/http/{campaignId}:
+Calls CampaignStore.DeleteCampaign(). (Consider soft delete vs hard delete).
+Logs audit event.
+POST /api/v1/campaigns/http/{campaignId}/upload (upload .txt file):
+Handles file upload.
+Parses domains from the file.
+For each domain, creates an HTTPValidationCampaignItem with status pending.
+Calls CampaignStore.AddCampaignItem() (or a batch version).
+Updates InitialNumberOfDomains on the campaign.
+Logs audit event and UploadEvent.
+GET /api/v1/campaigns/http/{campaignId}/results (export):
+Retrieves all items for the campaign.
+Formats as CSV/JSON (stub: return JSON list of items).
+(Actual file generation/download later).
+POST /api/v1/campaigns/http/{campaignId}/retry (retry failed):
+Finds items with failed status.
+Updates their status to pending or retrying.
+(Actual re-processing logic later).
+Logs audit event.
+GET /api/v1/campaigns/http/{campaignId}/domains (per-domain status):
+Calls CampaignStore.GetCampaignItems(). Handles filtering/pagination for items (stub these).
+Router Updates (`internal/api/router.go`):
+Add routes for the new campaign endpoints, pointing to the new handlers.
+Campaign Processing Logic (Conceptual - for `HTTPValidationCampaign`):
+A background worker/goroutine system will be needed to process campaigns marked active.
+This worker would:
+Fetch pending items for an active campaign from the store.
+Use the httpvalidator.HTTPValidator service (similar to how HTTPValidateHandler did, but now driven by campaign settings like HTTPPersonaID).
+Update each HTTPValidationCampaignItem in the store with results, status.
+Update ProcessedDomainsCount and Progress on the campaign object in the store.
+Handle campaign status transitions (e.g., to completed or failed).
+This processing logic is complex and will be a subsequent step after CRUD and basic data flow are established. For the initial implementation, we might manually trigger processing or have a very simple loop.
+Execution - Step-by-Step (after your confirmation for each):
+
+Step 1 (Models & Store Interface):
+Create internal/campaigns/models.go with BaseCampaign, CampaignStatus, CampaignAuditEntry, UploadEvent.
+Create internal/campaigns/httpvalidation/models.go with HTTPValidationCampaign, HTTPValidationCampaignItem.
+Define the CampaignStore interface in internal/campaigns/store.go.
+Build to ensure no compilation errors.
+Step 2 (In-Memory Store Implementation):
+Implement InMemoryCampaignStore in internal/campaigns/store.go (or a new inmemory_store.go).
+Implement basic CRUD methods for campaigns (Create, Get, Update basic fields - no item handling yet).
+Build.
+Step 3 (API Handler Base & Router for Campaigns):
+Update APIHandler in internal/api/handler_base.go to include an instance of campaigns.CampaignStore.
+Update NewAPIHandler to initialize and pass the store (e.g., campaigns.NewInMemoryCampaignStore()).
+Create internal/api/campaign_http_validation_handlers.go.
+Add routes for POST /api/v1/campaigns/http and GET /api/v1/campaigns/http/{campaignId} to router.go, pointing to placeholder handlers in the new handler file.
+Implement stub handlers for these two endpoints.
+Build.
+Step 4 (Implement Create & Get Campaign API):
+Implement the full logic for CreateHTTPValidationCampaignHandler (using the store).
+Implement the full logic for GetHTTPValidationCampaignHandler (using the store).
+Basic testing using curl or similar.
+Subsequent steps would cover other CRUD endpoints, item handling, upload, and eventually the background processing logic.
+This plan breaks down the large requirement into manageable chunks, focusing on getting the data structures and basic campaign lifecycle in place first for one campaign type.
+
+Please review this plan. I will wait for your confirmation on this plan before proceeding with the first execution step.
+
+you should start with DNS validation campaign not HTTP validation campaign, re adjust your plan
+Okay, I will re-adjust the plan to start with the "DNS Validation Campaign" instead of the HTTP Validation Campaign. The overall structure and approach will be very similar.
+
+Adjusted High-Level Plan:
+
+Project Structure for Campaigns: (Same as before)
+internal/campaigns
+internal/campaigns/models.go
+internal/campaigns/store.go
+internal/campaigns/dnsvalidation/: Specific logic for DNS Validation Campaigns.
+models.go
+handler.go
+service.go
+Core Campaign Modeling (`internal/campaigns/models.go`): (Same as before)
+CampaignStatus enum.
+BaseCampaign struct.
+CampaignAuditEntry struct.
+UploadEvent struct.
+DNS Validation Campaign Modeling:
+In internal/campaigns/dnsvalidation/models.go:
+DNSValidationCampaign struct: Embed campaigns.BaseCampaign and add specific fields: DomainInputSource, SourceMode, InitialNumberOfDomains, ProcessedDomainsCount, DNSPersonaID, ProxyAssignmentID. (Note: ProxyAssignmentID is mentioned for DNS campaigns in requirements.txt, implying proxies might be used for the DNS queries themselves, perhaps for routing DoH/DoT requests. This needs clarification if direct DNS resolvers via proxies are intended, as the current dnsvalidator doesn't use the ProxyManager directly).
+DNSValidationCampaignItem struct: Domain, ValidationStatus (enum: pending, processing, done, failed, retried, skipped), LastCheckedAt, ErrorDetails, DNSRecordData (object: e.g., dnsvalidator.ValidationResult or a defined subset).
+Campaign Store (`internal/campaigns/store.go`): (Same interface, implementation will handle different campaign types)
+Define CampaignStore interface (as before).
+Implement InMemoryCampaignStore (as before).
+API Handler Structure (`internal/api/campaign_dns_validation_handlers.go` - new file):
+(Same approach as before, APIHandler in handler_base.go gets the CampaignStore).
+DNS Validation Campaign API Endpoints (stubs first, then implementation):
+POST /api/v1/campaigns/dns (create)
+GET /api/v1/campaigns/dns (list)
+GET /api/v1/campaigns/dns/{campaignId} (details)
+PUT /api/v1/campaigns/dns/{campaignId} (update)
+DELETE /api/v1/campaigns/dns/{campaignId}
+POST /api/v1/campaigns/dns/{campaignId}/upload
+GET /api/v1/campaigns/dns/{campaignId}/results
+POST /api/v1/campaigns/dns/{campaignId}/retry
+GET /api/v1/campaigns/dns/{campaignId}/domains
+Router Updates (`internal/api/router.go`):
+Add routes for the new DNS campaign endpoints.
+Campaign Processing Logic (Conceptual - for `DNSValidationCampaign`):
+(Similar to HTTP, but uses the dnsvalidator.DNSValidator service, driven by campaign settings like DNSPersonaID).
+Adjusted Execution - Step-by-Step (after your confirmation for each):
+
+Step 1 (Models & Store Interface):
+Create internal/campaigns/models.go with BaseCampaign, CampaignStatus, CampaignAuditEntry, UploadEvent.
+Create internal/campaigns/dnsvalidation/models.go with DNSValidationCampaign, DNSValidationCampaignItem.
+Define the CampaignStore interface in internal/campaigns/store.go.
+Build.
+Step 2 (In-Memory Store Implementation):
+Implement InMemoryCampaignStore in internal/campaigns/store.go (or new inmemory_store.go).
+Implement basic CRUD for campaigns (Create, Get, Update of DNSValidationCampaign type).
+Build.
+Step 3 (API Handler Base & Router for DNS Campaigns):
+Update APIHandler in internal/api/handler_base.go to include campaigns.CampaignStore.
+Update NewAPIHandler to initialize the store.
+Create internal/api/campaign_dns_validation_handlers.go.
+Add routes for POST /api/v1/campaigns/dns and GET /api/v1/campaigns/dns/{campaignId} to router.go.
+Implement stub handlers.
+Build.
+Step 4 (Implement Create & Get DNS Campaign API):
+Full logic for CreateDNSValidationCampaignHandler.
+Full logic for GetDNSValidationCampaignHandler.
+basic testing
+
+Addendum to High-Level Plan for Lead Generation Campaign:
+
+Project Structure for Campaigns (Addition):
+
+internal/campaigns/leadgeneration/: Specific logic for Lead Generation Campaigns.
+models.go
+handler.go
+service.go
+Lead Generation Campaign Modeling (`internal/campaigns/leadgeneration/models.go`):
+
+LeadGenerationCampaign struct: Embed campaigns.BaseCampaign and add specific fields:
+InputCampaignIDs []string (IDs of prerequisite DNS/HTTP validation campaigns)
+KeywordSetIDs []string (IDs of keyword sets to use)
+HTTPPersonaID *string (for fetching content if not already part of input campaigns' results)
+DNSPersonaID *string (for fetching content)
+ProxyAssignmentID *string (if fetching is done by this campaign directly)
+(Other relevant fields from `requirements.txt` like `ProcessedLeadsCount`, etc.)
+LeadGenerationCampaignItem (or Lead) struct:
+Domain string
+URL string (specific URL from which content was fetched/analyzed)
+KeywordMatches []keywordextractor.KeywordExtractionResult
+Score *float64 (optional, for future scoring logic)
+ExtractionStatus string (enum: pending, processing, done, error)
+ErrorDetails string
+LastProcessedAt time.Time
+Lead Generation Campaign API Endpoints (Following the standard pattern):
+
+POST /api/v1/campaigns/lead
+GET /api/v1/campaigns/lead
+GET /api/v1/campaigns/lead/{campaignId}
+Etc.
+Campaign Processing Logic (Conceptual - for `LeadGenerationCampaign`):
+
+This campaign type would be more complex. Its processing would involve:
+Identifying target domains/URLs from the InputCampaignIDs.
+If raw content is not already available from input campaigns, use the ContentFetcher (with specified HTTP/DNS personas and keyword sets) to get content for each relevant URL. This is where the keywords logic (or its underlying service, the ContentFetcher + keywordextractor) would be heavily leveraged.
+Storing LeadGenerationCampaignItem data, including extracted keywords.
+Future: Applying scoring logic.
+Phasing: The Lead Generation Campaign would be implemented after the foundational campaign structure and at least one basic validation campaign type (like DNS or HTTP validation) are fully working, as it depends on the output of these other campaign types or directly uses the content fetching and keyword extraction services.

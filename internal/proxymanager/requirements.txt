@@ -1,0 +1,301 @@
+DomainFlow Campaign API & Backend Requirements
+Architectural Context
+DomainFlow is an enterprise-grade, modular lead generation and domain validation platform. All campaign types—HTTP Validation, DNS Validation, Domain Generation, and Lead Generation—must follow a unified, extensible CRUD design. The architecture is designed for multi-user operation, high scalability, robust auditability, and seamless UI/backend integration.
+Key system principles:
+
+Each campaign is a first-class object, uniquely identified, independently traceable, and associated with full per-domain/per-lead status and results.
+
+Campaigns are strictly separated by type, but unified in field conventions and endpoint patterns for easy frontend mapping and future extensibility.
+
+All state changes and uploads are tracked via audit logs and per-domain records for transparency and error recovery.
+
+APIs must support real-time progress, filtering, sorting, pagination, file uploads, and exporting results.
+
+Status fields are rich, covering all meaningful operational states (pending, active, paused, completed, failed, cancelled, error, retrying).
+
+The design allows for seamless future addition of new campaign types (e.g., Lead Generation), additional input modes, and new fields without breaking API/UI contracts.
+
+Every requirement below should be interpreted as the minimum baseline; do not remove any field or endpoint, and use this as the single source of truth for all backend and data modeling.
+
+1. HTTP Validation Campaign
+Purpose:
+Qualifies domains for liveness and HTTP properties using specified personas and proxies.
+
+Fields to Store:
+
+campaignId (UUID, unique)
+
+campaignName (string)
+
+description (string, optional)
+
+campaignType = "HTTP Validation" (string/enum)
+
+status (enum: pending, active, paused, completed, failed, cancelled, error, retrying)
+
+createdAt (timestamp)
+
+updatedAt (timestamp)
+
+createdBy (userId, string/int)
+
+ownerId (userId, string/int; for multi-user)
+
+domainInputSource (uploaded file path, fileId, or direct input)
+
+sourceMode (string, future-proofing for multiple input sources)
+
+initialNumberOfDomains (int, optional)
+
+processedDomainsCount (int, updated live)
+
+httpPersonaId (string, e.g. "default")
+
+proxyAssignmentId (string: "direct" or proxy group ID)
+
+notes (string, optional)
+
+tags (array of strings, optional)
+
+uploadHistory (array of upload events: filename, fileId, uploadedAt, uploadedBy)
+
+progress (percentage, computed)
+
+resultFilePath (string, for result export)
+
+auditLog (array: action, userId, timestamp, description)
+
+Per-Domain Tracking:
+
+domain (string)
+
+validationStatus (enum: pending, processing, done, failed, retried, skipped)
+
+lastCheckedAt (timestamp)
+
+errorDetails (string, optional)
+
+httpStatusCode (int, optional)
+
+resultData (object, per-domain HTTP validation result)
+
+Endpoints:
+
+POST /api/v1/campaigns/http (create)
+
+GET /api/v1/campaigns/http (list, filter, paginate)
+
+GET /api/v1/campaigns/http/{campaignId} (details)
+
+PUT /api/v1/campaigns/http/{campaignId} (update)
+
+DELETE /api/v1/campaigns/http/{campaignId} (delete)
+
+POST /api/v1/campaigns/http/{campaignId}/upload (upload .txt file)
+
+GET /api/v1/campaigns/http/{campaignId}/results (export/download)
+
+POST /api/v1/campaigns/http/{campaignId}/retry (retry failed domains)
+
+GET /api/v1/campaigns/http/{campaignId}/domains (per-domain status)
+
+GET /api/v1/campaigns/http?status=active&ownerId=... (list w/ filtering)
+
+2. DNS Validation Campaign
+Purpose:
+Validates domain DNS properties using assigned DNS persona and proxy, with robust per-domain status tracking.
+
+Fields to Store:
+(Same as HTTP, with DNS-specific fields)
+
+campaignId (UUID)
+
+campaignName
+
+description
+
+campaignType = "DNS Validation"
+
+status
+
+createdAt, updatedAt, createdBy, ownerId
+
+domainInputSource, sourceMode
+
+initialNumberOfDomains
+
+processedDomainsCount
+
+dnsPersonaId (string, e.g. "default")
+
+proxyAssignmentId
+
+notes, tags, uploadHistory, progress, resultFilePath, auditLog
+
+Per-Domain Tracking:
+
+domain
+
+validationStatus
+
+lastCheckedAt
+
+errorDetails
+
+dnsRecordData (object: resolved IPs, CNAME, etc.)
+
+Endpoints:
+(Same as HTTP, replace http with dns.)
+
+3. Domain Generation Campaign
+Purpose:
+Generates domain candidates based on complex, configurable patterns, charset, and TLDs. Supports resume, uniqueness, and strategy flags for large-scale or deterministic generation.
+
+Fields to Store:
+
+campaignId (UUID)
+
+campaignName
+
+description
+
+campaignType = "Domain Generation"
+
+status
+
+createdAt, updatedAt, createdBy, ownerId
+
+pattern (string/enum, e.g. "prefix variable")
+
+constantPart (string)
+
+prefixVariableLength (int)
+
+charSet (string)
+
+tlds (array of strings)
+
+maxTheoreticalDomains (int, computed for preview)
+
+targetDomainsToGenerate (int, optional)
+
+processedDomainsCount (int)
+
+generationStrategy (string/enum, e.g. brute-force, dictionary)
+
+enforceUniqueness (bool)
+
+resumeFlag (bool, support resumable batches)
+
+proxyAssignmentId
+
+notes, tags, progress, resultFilePath, auditLog
+
+Per-Domain Tracking:
+
+domain
+
+generationStatus (pending, generated, skipped, error)
+
+errorDetails
+
+generatedAt (timestamp)
+
+Endpoints:
+(Same as above, using /generation.)
+
+4. Lead Generation Campaign (Upcoming / For Reference)
+Purpose:
+Combines validated domain results, keyword sets, and personas to extract, score, and export leads. Extensible to support future scoring and context logic.
+
+Fields to Store:
+
+campaignId (UUID)
+
+campaignName
+
+description
+
+campaignType = "Lead Generation"
+
+status
+
+createdAt, updatedAt, createdBy, ownerId
+
+inputCampaignIds (array of campaignIds; links to validated DNS/HTTP/gen campaigns)
+
+keywordSetIds (array)
+
+httpPersonaId, dnsPersonaId
+
+proxyAssignmentId
+
+notes, tags, progress, resultFilePath, auditLog
+
+Per-Lead Tracking:
+
+domain
+
+url
+
+keywordMatches (array: {keyword, matchContext})
+
+score (float/int, optional)
+
+extractionStatus (pending, processing, done, error)
+
+errorDetails
+
+lastProcessedAt (timestamp)
+
+Endpoints:
+
+POST /api/v1/campaigns/lead
+
+GET /api/v1/campaigns/lead
+
+GET /api/v1/campaigns/lead/{campaignId}
+
+PUT /api/v1/campaigns/lead/{campaignId}
+
+DELETE /api/v1/campaigns/lead/{campaignId}
+
+GET /api/v1/campaigns/lead/{campaignId}/results
+
+5. General Requirements (All Campaigns)
+Campaign status:
+Enum supports all states: pending, active, paused, completed, failed, cancelled, error, retrying.
+
+Audit logging:
+Every creation, update, upload, retry, or delete is logged with user and timestamp.
+
+Multi-user fields:
+createdBy, ownerId (support for account/user separation)
+
+Per-domain/per-lead progress:
+All campaign types must allow status lookup, batch progress calculation, and export.
+
+Progress bar & metrics:
+Expose backend fields for UI to display real-time completion, counts, and errors.
+
+Result export:
+Download endpoint for campaign results (CSV/JSON).
+
+Structured errors:
+All endpoints return errors as {code, message, field} for frontend validation.
+
+Filtering, sorting, pagination:
+Required on all list/get endpoints for performance and frontend search.
+
+Notes/tags:
+Optional metadata fields for UI/UX and campaign management.
+
+Secure file uploads:
+Accept only .txt, validate contents, log all uploads with user/timestamp.
+
+Retry logic:
+API support for re-processing only failed domains in validation campaigns.
+
+Campaign history endpoint:
+Expose change log/history per campaign for UI troubleshooting and compliance.
+

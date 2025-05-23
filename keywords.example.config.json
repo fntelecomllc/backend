@@ -1,0 +1,54 @@
+[
+  {
+    "id": "contact_info_v1",
+    "name": "Basic Contact Information",
+    "description": "Identifies common contact pages and email addresses.",
+    "rules": [
+      {
+        "id": "rule_contact_page_01",
+        "pattern": "contact us",
+        "type": "string",
+        "caseSensitive": false,
+        "category": "Contact Page Link",
+        "contextChars": 50
+      },
+      {
+        "id": "rule_email_01",
+        "pattern": "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}",
+        "type": "regex",
+        "caseSensitive": false,
+        "category": "Email Address",
+        "contextChars": 30
+      },
+      {
+        "id": "rule_phone_01",
+        "pattern": "call us",
+        "type": "string",
+        "caseSensitive": false,
+        "category": "Phone Inquiry",
+        "contextChars": 40
+      }
+    ]
+  },
+  {
+    "id": "product_interest_v1",
+    "name": "Product Interest Signals",
+    "description": "Keywords related to product features or demo requests.",
+    "rules": [
+      {
+        "pattern": "request a demo",
+        "type": "string",
+        "caseSensitive": false,
+        "category": "Demo Request",
+        "contextChars": 60
+      },
+      {
+        "pattern": "pricing",
+        "type": "string",
+        "caseSensitive": false,
+        "category": "Pricing Page",
+        "contextChars": 30
+      }
+    ]
+  }
+]

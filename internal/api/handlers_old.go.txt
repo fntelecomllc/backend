@@ -1,0 +1,1672 @@
+// File: backend/internal/api/handlers.go
+package api
+
+import (
+    "context"
+    "crypto/tls"
+    "encoding/json"
+    "errors"
+    "fmt"
+    "io/ioutil"
+    "log"
+    "math/rand"
+    "net/http"
+    "net/http/cookiejar"
+    "os"
+    "path/filepath"
+    "sort"
+    "strings"
+    "sync"
+    "time"
+
+    "github.com/fntelecomllc/domainflow/backend/internal/config"
+    "github.com/fntelecomllc/domainflow/backend/internal/dnsvalidator"
+    "github.com/fntelecomllc/domainflow/backend/internal/httpvalidator"
+    "github.com/fntelecomllc/domainflow/backend/internal/proxymanager"
+    "github.com/gorilla/mux"
+    "golang.org/x/time/rate"
+)
+
+var campaignDNSSettingsStore = make(map[string]*config.CampaignDNSSettings)
+var campaignStoreMutex = &sync.RWMutex{}
+
+type APIHandler struct {
+    Config      *config.AppConfig
+    ProxyMgr    *proxymanager.ProxyManager
+    configMutex sync.RWMutex
+}
+
+func NewAPIHandler(cfg *config.AppConfig, pm *proxymanager.ProxyManager) *APIHandler {
+    return &APIHandler{Config: cfg, ProxyMgr: pm}
+}
+
+func (h *APIHandler) PingHandler(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]string{"message": "pong", "timestamp": time.Now().Format(time.RFC3339)})
+}
+
+type DNSPersonaListItem struct {
+    ID          string `json:"id"`
+    Name        string `json:"name"`
+    Description string `json:"description"`
+}
+
+func (h *APIHandler) ListDNSPersonasHandler(w http.ResponseWriter, r *http.Request) {
+    h.configMutex.RLock()
+    personas := h.Config.DNSPersonas
+    h.configMutex.RUnlock()
+    responseItems := make([]DNSPersonaListItem, len(personas))
+    for i, p := range personas {
+        responseItems[i] = DNSPersonaListItem{ID: p.ID, Name: p.Name, Description: p.Description}
+    }
+    w.Header().Set("Content-Type", "application/json")
+    if err := json.NewEncoder(w).Encode(responseItems); err != nil {
+        log.Printf("API Error: Encoding DNS Personas list: %v", err)
+        http.Error(w, "Failed to encode DNS personas", http.StatusInternalServerError)
+    }
+}
+
+// CreateDNSPersonaHandler creates a new DNS persona.
+func (h *APIHandler) CreateDNSPersonaHandler(w http.ResponseWriter, r *http.Request) {
+	var newPersona config.DNSPersona
+	if err := json.NewDecoder(r.Body).Decode(&newPersona); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	defer r.Body.Close()
+
+	if newPersona.ID == "" {
+		respondWithError(w, http.StatusBadRequest, "DNS Persona ID cannot be empty")
+		return
+	}
+
+	h.configMutex.Lock()
+	// Check if ID is unique
+	for _, p := range h.Config.DNSPersonas {
+		if p.ID == newPersona.ID {
+			h.configMutex.Unlock()
+			respondWithError(w, http.StatusConflict, fmt.Sprintf("DNS persona with ID '%s' already exists", newPersona.ID))
+			return
+		}
+	}
+
+	h.Config.DNSPersonas = append(h.Config.DNSPersonas, newPersona)
+	personasToSave := make([]config.DNSPersona, len(h.Config.DNSPersonas))
+	copy(personasToSave, h.Config.DNSPersonas)
+	configDir := filepath.Dir(h.Config.GetLoadedFromPath())
+	if h.Config.GetLoadedFromPath() == "" || filepath.Base(h.Config.GetLoadedFromPath()) == h.Config.GetLoadedFromPath() {
+        cwd, _ := os.Getwd()
+        configDir = cwd
+    }
+	h.configMutex.Unlock() // Unlock before disk I/O
+
+	if err := config.SaveDNSPersonas(personasToSave, configDir); err != nil {
+		log.Printf("Error saving DNS personas: %v", err)
+		// Attempt to revert in-memory change if save failed
+		h.configMutex.Lock()
+		for i, p := range h.Config.DNSPersonas {
+			if p.ID == newPersona.ID {
+				h.Config.DNSPersonas = append(h.Config.DNSPersonas[:i], h.Config.DNSPersonas[i+1:]...)
+				break
+			}
+		}
+		h.configMutex.Unlock()
+		respondWithError(w, http.StatusInternalServerError, "Failed to save DNS persona")
+		return
+	}
+
+	log.Printf("API: Created DNS Persona ID: %s, Name: %s", newPersona.ID, newPersona.Name)
+	respondWithJSON(w, http.StatusCreated, newPersona)
+}
+
+// UpdateDNSPersonaHandler updates an existing DNS persona.
+func (h *APIHandler) UpdateDNSPersonaHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	personaID := vars["personaId"]
+
+	var updatedPersona config.DNSPersona
+	if err := json.NewDecoder(r.Body).Decode(&updatedPersona); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	defer r.Body.Close()
+
+	if personaID != updatedPersona.ID {
+		respondWithError(w, http.StatusBadRequest, "Persona ID in URL and payload must match")
+		return
+	}
+
+	h.configMutex.Lock()
+	found := false
+	var originalPersona config.DNSPersona // To store a copy of the persona before update
+	var personaIndex int
+
+	for i, p := range h.Config.DNSPersonas {
+		if p.ID == personaID {
+			originalPersona = p // Save a copy for potential rollback on save failure
+			h.Config.DNSPersonas[i] = updatedPersona
+			personaIndex = i
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		h.configMutex.Unlock()
+		respondWithError(w, http.StatusNotFound, fmt.Sprintf("DNS persona with ID '%s' not found", personaID))
+		return
+	}
+
+	personasToSave := make([]config.DNSPersona, len(h.Config.DNSPersonas))
+	copy(personasToSave, h.Config.DNSPersonas)
+	configDir := filepath.Dir(h.Config.GetLoadedFromPath())
+	if h.Config.GetLoadedFromPath() == "" || filepath.Base(h.Config.GetLoadedFromPath()) == h.Config.GetLoadedFromPath() {
+        cwd, _ := os.Getwd()
+        configDir = cwd
+    }
+	h.configMutex.Unlock() // Unlock before disk I/O
+
+	if err := config.SaveDNSPersonas(personasToSave, configDir); err != nil {
+		log.Printf("Error saving DNS personas after update: %v", err)
+		// Attempt to revert in-memory change if save failed
+		h.configMutex.Lock()
+		if found { // Ensure it was found before trying to revert
+			h.Config.DNSPersonas[personaIndex] = originalPersona
+		}
+		h.configMutex.Unlock()
+		respondWithError(w, http.StatusInternalServerError, "Failed to update DNS persona")
+		return
+	}
+
+	log.Printf("API: Updated DNS Persona ID: %s", updatedPersona.ID)
+	respondWithJSON(w, http.StatusOK, updatedPersona)
+}
+
+// DeleteDNSPersonaHandler deletes a DNS persona.
+func (h *APIHandler) DeleteDNSPersonaHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	personaID := vars["personaId"]
+
+	h.configMutex.Lock()
+	found := false
+	var originalPersonas []config.DNSPersona
+	var newPersonas []config.DNSPersona
+
+	originalPersonas = make([]config.DNSPersona, len(h.Config.DNSPersonas))
+	copy(originalPersonas, h.Config.DNSPersonas)
+
+	for _, p := range h.Config.DNSPersonas {
+		if p.ID == personaID {
+			found = true
+		} else {
+			newPersonas = append(newPersonas, p)
+		}
+	}
+
+	if !found {
+		h.configMutex.Unlock()
+		respondWithError(w, http.StatusNotFound, fmt.Sprintf("DNS persona with ID '%s' not found", personaID))
+		return
+	}
+
+	h.Config.DNSPersonas = newPersonas
+	personasToSave := make([]config.DNSPersona, len(h.Config.DNSPersonas))
+	copy(personasToSave, h.Config.DNSPersonas)
+	configDir := filepath.Dir(h.Config.GetLoadedFromPath())
+	if h.Config.GetLoadedFromPath() == "" || filepath.Base(h.Config.GetLoadedFromPath()) == h.Config.GetLoadedFromPath() {
+        cwd, _ := os.Getwd()
+        configDir = cwd
+    }
+	h.configMutex.Unlock() // Unlock before disk I/O
+
+	if err := config.SaveDNSPersonas(personasToSave, configDir); err != nil {
+		log.Printf("Error saving DNS personas after deletion: %v", err)
+		// Attempt to revert in-memory change if save failed
+		h.configMutex.Lock()
+		h.Config.DNSPersonas = originalPersonas
+		h.configMutex.Unlock()
+		respondWithError(w, http.StatusInternalServerError, "Failed to delete DNS persona")
+		return
+	}
+
+	log.Printf("API: Deleted DNS Persona ID: %s", personaID)
+	respondWithJSON(w, http.StatusNoContent, nil)
+}
+
+
+// CreateHTTPPersonaHandler creates a new HTTP persona.
+func (h *APIHandler) CreateHTTPPersonaHandler(w http.ResponseWriter, r *http.Request) {
+	var newPersona config.HTTPPersona
+	if err := json.NewDecoder(r.Body).Decode(&newPersona); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	defer r.Body.Close()
+
+	if newPersona.ID == "" {
+		respondWithError(w, http.StatusBadRequest, "HTTP Persona ID cannot be empty")
+		return
+	}
+
+	h.configMutex.Lock()
+	for _, p := range h.Config.HTTPPersonas {
+		if p.ID == newPersona.ID {
+			h.configMutex.Unlock()
+			respondWithError(w, http.StatusConflict, fmt.Sprintf("HTTP persona with ID '%s' already exists", newPersona.ID))
+			return
+		}
+	}
+
+	h.Config.HTTPPersonas = append(h.Config.HTTPPersonas, newPersona)
+	personasToSave := make([]config.HTTPPersona, len(h.Config.HTTPPersonas))
+	copy(personasToSave, h.Config.HTTPPersonas)
+	configDir := filepath.Dir(h.Config.GetLoadedFromPath())
+	if h.Config.GetLoadedFromPath() == "" || filepath.Base(h.Config.GetLoadedFromPath()) == h.Config.GetLoadedFromPath() {
+        cwd, _ := os.Getwd()
+        configDir = cwd
+    }
+	h.configMutex.Unlock() // Unlock before disk I/O
+
+	if err := config.SaveHTTPPersonas(personasToSave, configDir); err != nil {
+		log.Printf("Error saving HTTP personas: %v", err)
+		h.configMutex.Lock()
+		for i, p := range h.Config.HTTPPersonas {
+			if p.ID == newPersona.ID {
+				h.Config.HTTPPersonas = append(h.Config.HTTPPersonas[:i], h.Config.HTTPPersonas[i+1:]...)
+				break
+			}
+		}
+		h.configMutex.Unlock()
+		respondWithError(w, http.StatusInternalServerError, "Failed to save HTTP persona")
+		return
+	}
+
+	log.Printf("API: Created HTTP Persona ID: %s, Name: %s", newPersona.ID, newPersona.Name)
+	respondWithJSON(w, http.StatusCreated, newPersona)
+}
+
+// UpdateHTTPPersonaHandler updates an existing HTTP persona.
+func (h *APIHandler) UpdateHTTPPersonaHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	personaID := vars["personaId"]
+
+	var updatedPersona config.HTTPPersona
+	if err := json.NewDecoder(r.Body).Decode(&updatedPersona); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	defer r.Body.Close()
+
+	if personaID != updatedPersona.ID {
+		respondWithError(w, http.StatusBadRequest, "Persona ID in URL and payload must match")
+		return
+	}
+
+	h.configMutex.Lock()
+	found := false
+	var originalPersona config.HTTPPersona
+	var personaIndex int
+
+	for i, p := range h.Config.HTTPPersonas {
+		if p.ID == personaID {
+			originalPersona = p
+			h.Config.HTTPPersonas[i] = updatedPersona
+			personaIndex = i
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		h.configMutex.Unlock()
+		respondWithError(w, http.StatusNotFound, fmt.Sprintf("HTTP persona with ID '%s' not found", personaID))
+		return
+	}
+
+	personasToSave := make([]config.HTTPPersona, len(h.Config.HTTPPersonas))
+	copy(personasToSave, h.Config.HTTPPersonas)
+	configDir := filepath.Dir(h.Config.GetLoadedFromPath())
+	if h.Config.GetLoadedFromPath() == "" || filepath.Base(h.Config.GetLoadedFromPath()) == h.Config.GetLoadedFromPath() {
+        cwd, _ := os.Getwd()
+        configDir = cwd
+    }
+	h.configMutex.Unlock() // Unlock before disk I/O
+
+	if err := config.SaveHTTPPersonas(personasToSave, configDir); err != nil {
+		log.Printf("Error saving HTTP personas after update: %v", err)
+		h.configMutex.Lock()
+		if found {
+			h.Config.HTTPPersonas[personaIndex] = originalPersona
+		}
+		h.configMutex.Unlock()
+		respondWithError(w, http.StatusInternalServerError, "Failed to update HTTP persona")
+		return
+	}
+
+	log.Printf("API: Updated HTTP Persona ID: %s", updatedPersona.ID)
+	respondWithJSON(w, http.StatusOK, updatedPersona)
+}
+
+// DeleteHTTPPersonaHandler deletes an HTTP persona.
+func (h *APIHandler) DeleteHTTPPersonaHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	personaID := vars["personaId"]
+
+	h.configMutex.Lock()
+	found := false
+	var originalPersonas []config.HTTPPersona
+	var newPersonas []config.HTTPPersona
+
+	originalPersonas = make([]config.HTTPPersona, len(h.Config.HTTPPersonas))
+	copy(originalPersonas, h.Config.HTTPPersonas)
+
+	for _, p := range h.Config.HTTPPersonas {
+		if p.ID == personaID {
+			found = true
+		} else {
+			newPersonas = append(newPersonas, p)
+		}
+	}
+
+	if !found {
+		h.configMutex.Unlock()
+		respondWithError(w, http.StatusNotFound, fmt.Sprintf("HTTP persona with ID '%s' not found", personaID))
+		return
+	}
+
+	h.Config.HTTPPersonas = newPersonas
+	personasToSave := make([]config.HTTPPersona, len(h.Config.HTTPPersonas))
+	copy(personasToSave, h.Config.HTTPPersonas)
+	configDir := filepath.Dir(h.Config.GetLoadedFromPath())
+	if h.Config.GetLoadedFromPath() == "" || filepath.Base(h.Config.GetLoadedFromPath()) == h.Config.GetLoadedFromPath() {
+        cwd, _ := os.Getwd()
+        configDir = cwd
+    }
+	h.configMutex.Unlock() // Unlock before disk I/O
+
+	if err := config.SaveHTTPPersonas(personasToSave, configDir); err != nil {
+		log.Printf("Error saving HTTP personas after deletion: %v", err)
+		h.configMutex.Lock()
+		h.Config.HTTPPersonas = originalPersonas
+		h.configMutex.Unlock()
+		respondWithError(w, http.StatusInternalServerError, "Failed to delete HTTP persona")
+		return
+	}
+
+	log.Printf("API: Deleted HTTP Persona ID: %s", personaID)
+	respondWithJSON(w, http.StatusNoContent, nil)
+}
+
+type HTTPPersonaListItem struct {
+    ID          string `json:"id"`
+    Name        string `json:"name"`
+    Description string `json:"description"`
+    UserAgent   string `json:"userAgent"`
+}
+
+func (h *APIHandler) ListHTTPPersonasHandler(w http.ResponseWriter, r *http.Request) {
+    h.configMutex.RLock()
+    personas := h.Config.HTTPPersonas
+    h.configMutex.RUnlock()
+    responseItems := make([]HTTPPersonaListItem, len(personas))
+    for i, p := range personas {
+        responseItems[i] = HTTPPersonaListItem{ID: p.ID, Name: p.Name, Description: p.Description, UserAgent: p.UserAgent}
+    }
+    w.Header().Set("Content-Type", "application/json")
+    if err := json.NewEncoder(w).Encode(responseItems); err != nil {
+        log.Printf("API Error: Encoding HTTP Personas list: %v", err)
+        http.Error(w, "Failed to encode HTTP personas", http.StatusInternalServerError)
+    }
+}
+
+func (h *APIHandler) GetCampaignDNSSettingsHandler(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    campaignID, ok := vars["campaignId"]
+    if !ok {
+        http.Error(w, "Campaign ID missing", http.StatusBadRequest)
+        return
+    }
+    campaignStoreMutex.RLock()
+    settings, exists := campaignDNSSettingsStore[campaignID]
+    campaignStoreMutex.RUnlock()
+    if !exists {
+        http.Error(w, fmt.Sprintf("DNS settings not found for campaign: %s", campaignID), http.StatusNotFound)
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(settings)
+}
+
+type UpdateCampaignDNSSettingsRequest struct {
+    RotationMode      config.CampaignDNSRotationMode `json:"rotationMode"`
+    SelectedPersonaIDs []string                      `json:"selectedPersonaIds,omitempty"`
+}
+
+func (h *APIHandler) UpdateCampaignDNSSettingsHandler(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    campaignID, ok := vars["campaignId"]
+    if !ok {
+        http.Error(w, "Campaign ID missing", http.StatusBadRequest)
+        return
+    }
+    var req UpdateCampaignDNSSettingsRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+    defer r.Body.Close()
+    validModes := map[config.CampaignDNSRotationMode]bool{
+        config.RotationAllSequential:         true,
+        config.RotationAllRandomPerDomain:    true,
+        config.RotationAllRandomPerRequest:   true,
+        config.RotationManualSequential:      true,
+        config.RotationManualRandomPerDomain: true,
+        config.RotationManualRandomPerRequest: true,
+    }
+    if !validModes[req.RotationMode] {
+        http.Error(w, fmt.Sprintf("Invalid rotationMode: '%s'", req.RotationMode), http.StatusBadRequest)
+        return
+    }
+    isManualMode := strings.HasPrefix(string(req.RotationMode), "manual_")
+    if isManualMode && (req.SelectedPersonaIDs == nil || len(req.SelectedPersonaIDs) == 0) {
+        http.Error(w, "selectedPersonaIds must be non-empty for manual modes", http.StatusBadRequest)
+        return
+    }
+    if isManualMode {
+        h.configMutex.RLock()
+        loadedPersonas := h.Config.DNSPersonas
+        h.configMutex.RUnlock()
+        validPIDs := make(map[string]bool)
+        for _, p := range loadedPersonas {
+            validPIDs[p.ID] = true
+        }
+        for _, sID := range req.SelectedPersonaIDs {
+            if !validPIDs[sID] {
+                http.Error(w, fmt.Sprintf("Invalid persona ID '%s'", sID), http.StatusBadRequest)
+                return
+            }
+        }
+    }
+    newSettings := &config.CampaignDNSSettings{
+        CampaignID:         campaignID,
+        RotationMode:       req.RotationMode,
+        SelectedPersonaIDs: req.SelectedPersonaIDs,
+    }
+    campaignStoreMutex.Lock()
+    campaignDNSSettingsStore[campaignID] = newSettings
+    campaignStoreMutex.Unlock()
+    log.Printf("API: Updated DNS settings for campaign '%s': Mode='%s', Personas=%v", campaignID, newSettings.RotationMode, newSettings.SelectedPersonaIDs)
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(newSettings)
+}
+
+type DNSValidationRequest struct {
+    Domains      []string `json:"domains"`
+    DNSPersonaID *string  `json:"dnsPersonaId,omitempty"`
+    CampaignID   *string  `json:"campaignId,omitempty"`
+}
+
+type DNSValidationResponse struct {
+    Results []dnsvalidator.ValidationResult `json:"results"`
+    Error   string                         `json:"error,omitempty"`
+}
+
+func convertDNSPersonaConfig(jsonCfg config.DNSValidatorConfigJSON) config.DNSValidatorConfig {
+    dnsStrategy := jsonCfg.ResolverStrategy
+    if dnsStrategy == "" {
+        dnsStrategy = "random_rotation"
+    }
+    validStrategies := map[string]bool{"random_rotation": true, "weighted_rotation": true, "sequential_failover": true}
+    if !validStrategies[dnsStrategy] {
+        log.Printf("Warning: Invalid DNS resolverStrategy '%s' in persona. Defaulting.", dnsStrategy)
+        dnsStrategy = "random_rotation"
+    }
+    concurrentQueriesPerDomain := jsonCfg.ConcurrentQueriesPerDomain
+    if concurrentQueriesPerDomain <= 0 {
+        concurrentQueriesPerDomain = 1
+    } else if concurrentQueriesPerDomain > 2 {
+        concurrentQueriesPerDomain = 2
+    }
+    maxDnsGoroutines := jsonCfg.MaxConcurrentGoroutines
+    if maxDnsGoroutines <= 0 {
+        maxDnsGoroutines = 10
+    }
+    rateDPS := jsonCfg.RateLimitDPS
+    if rateDPS <= 0 {
+        rateDPS = config.DefaultRateLimitDPS
+    }
+    rateBurst := jsonCfg.RateLimitBurst
+    if rateBurst <= 0 {
+        rateBurst = config.DefaultRateLimitBurst
+    }
+    return config.DNSValidatorConfig{
+        Resolvers:                  jsonCfg.Resolvers,
+        UseSystemResolvers:         jsonCfg.UseSystemResolvers,
+        QueryTimeout:               time.Duration(jsonCfg.QueryTimeoutSeconds) * time.Second,
+        MaxDomainsPerRequest:       jsonCfg.MaxDomainsPerRequest,
+        ResolverStrategy:           dnsStrategy,
+        ResolversWeighted:          jsonCfg.ResolversWeighted,
+        ResolversPreferredOrder:    jsonCfg.ResolversPreferredOrder,
+        ConcurrentQueriesPerDomain: concurrentQueriesPerDomain,
+        QueryDelayMin:              time.Duration(jsonCfg.QueryDelayMinMs) * time.Millisecond,
+        QueryDelayMax:              time.Duration(jsonCfg.QueryDelayMaxMs) * time.Millisecond,
+        MaxConcurrentGoroutines:    maxDnsGoroutines,
+        RateLimitDPS:               rateDPS,
+        RateLimitBurst:             rateBurst,
+        QueryTimeoutSeconds:        jsonCfg.QueryTimeoutSeconds,
+        JSONResolvers:              jsonCfg.Resolvers,
+        JSONUseSystemResolvers:     jsonCfg.UseSystemResolvers,
+        JSONMaxDomainsPerRequest:   jsonCfg.MaxDomainsPerRequest,
+        JSONResolverStrategy:       dnsStrategy,
+        JSONResolversWeighted:      jsonCfg.ResolversWeighted,
+        JSONResolversPreferredOrder: jsonCfg.ResolversPreferredOrder,
+        JSONConcurrentQueriesPerDomain: concurrentQueriesPerDomain,
+        JSONQueryDelayMinMs:       jsonCfg.QueryDelayMinMs,
+        JSONQueryDelayMaxMs:       jsonCfg.QueryDelayMaxMs,
+        JSONMaxConcurrentGoroutines: maxDnsGoroutines,
+        JSONRateLimitDPS:          rateDPS,
+        JSONRateLimitBurst:        rateBurst,
+    }
+}
+
+func (h *APIHandler) DNSValidateHandler(w http.ResponseWriter, r *http.Request) {
+    var req DNSValidationRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+    defer r.Body.Close()
+    if len(req.Domains) == 0 {
+        http.Error(w, "No domains provided", http.StatusBadRequest)
+        return
+    }
+    var effectiveDNSConfig config.DNSValidatorConfig
+    var personaRateLimiter *rate.Limiter
+    h.configMutex.RLock()
+    if req.DNSPersonaID != nil && *req.DNSPersonaID != "" {
+        var foundPersona *config.DNSPersona
+        for _, p := range h.Config.DNSPersonas {
+            if p.ID == *req.DNSPersonaID {
+                fp := p
+                foundPersona = &fp
+                break
+            }
+        }
+        if foundPersona != nil {
+            effectiveDNSConfig = convertDNSPersonaConfig(foundPersona.Config)
+            log.Printf("API DNS Batch: Using Persona '%s' for %d domains.", *req.DNSPersonaID, len(req.Domains))
+        } else {
+            log.Printf("API DNS Batch: Persona ID '%s' not found. Using server defaults.", *req.DNSPersonaID)
+            effectiveDNSConfig = h.Config.DNSValidator
+        }
+    } else if req.CampaignID != nil && *req.CampaignID != "" {
+        log.Printf("API DNS Batch: Campaign ID '%s' provided. Campaign logic TBD, using server defaults.", *req.CampaignID)
+        effectiveDNSConfig = h.Config.DNSValidator
+    } else {
+        log.Printf("API DNS Batch: No Persona or Campaign ID. Using server defaults for %d domains.", len(req.Domains))
+        effectiveDNSConfig = h.Config.DNSValidator
+    }
+    h.configMutex.RUnlock()
+    if effectiveDNSConfig.MaxDomainsPerRequest > 0 && len(req.Domains) > effectiveDNSConfig.MaxDomainsPerRequest {
+        http.Error(w, fmt.Sprintf("Too many domains. Max %d for this configuration.", effectiveDNSConfig.MaxDomainsPerRequest), http.StatusBadRequest)
+        return
+    }
+    if effectiveDNSConfig.RateLimitDPS > 0 && effectiveDNSConfig.RateLimitBurst > 0 {
+        personaRateLimiter = rate.NewLimiter(rate.Limit(effectiveDNSConfig.RateLimitDPS), effectiveDNSConfig.RateLimitBurst)
+    }
+    validator := dnsvalidator.New(effectiveDNSConfig)
+    var results []dnsvalidator.ValidationResult
+    if personaRateLimiter != nil {
+        var allResults []dnsvalidator.ValidationResult
+        for _, domainToValidate := range req.Domains {
+            if err := personaRateLimiter.WaitN(r.Context(), 1); err != nil {
+                log.Printf("API DNS Batch: Rate limiter context error for domain %s: %v", domainToValidate, err)
+                allResults = append(allResults, dnsvalidator.ValidationResult{Domain: domainToValidate, Status: "Error", Error: "Rate limit error: " + err.Error(), Timestamp: time.Now().Format(time.RFC3339)})
+                continue
+            }
+            singleDomainBatchResult := validator.ValidateDomains([]string{domainToValidate})
+            allResults = append(allResults, singleDomainBatchResult...)
+        }
+        results = allResults
+    } else {
+        results = validator.ValidateDomains(req.Domains)
+    }
+    w.Header().Set("Content-Type", "application/json")
+    if err := json.NewEncoder(w).Encode(DNSValidationResponse{Results: results}); err != nil {
+        log.Printf("API Error: Encoding DNS validation response: %v", err)
+        http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+    }
+    log.Printf("API DNS Batch: Completed validation for %d domains.", len(req.Domains))
+}
+
+func (h *APIHandler) DNSValidateStreamHandler(w http.ResponseWriter, r *http.Request) {
+    streamType := "DNS"
+    flusher, ok := w.(http.Flusher)
+    if !ok {
+        log.Printf("API Error: %sValidateStreamHandler - Streaming unsupported.", streamType)
+        http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
+        return
+    }
+    domainsQuery := r.URL.Query()["domain"]
+    if len(domainsQuery) == 0 {
+        log.Printf("API Error: %sValidateStreamHandler - No domains provided.", streamType)
+        http.Error(w, "No domains provided", http.StatusBadRequest)
+        return
+    }
+    personaIDQuery := r.URL.Query().Get("dnsPersonaId")
+    campaignIDQuery := r.URL.Query().Get("campaignId")
+    var personaIDPtr *string
+    if personaIDQuery != "" {
+        personaIDPtr = &personaIDQuery
+    }
+    var campaignIDPtr *string
+    if campaignIDQuery != "" {
+        campaignIDPtr = &campaignIDQuery
+    }
+    h.configMutex.RLock()
+    var effectiveDNSConfig config.DNSValidatorConfig = h.Config.DNSValidator
+    var streamRateLimiter *rate.Limiter
+    streamChunkSize := h.Config.Server.StreamChunkSize
+    if streamChunkSize <= 0 {
+        streamChunkSize = config.DefaultStreamChunkSize
+    }
+    if personaIDPtr != nil {
+        var chosenPersona *config.DNSPersona
+        for _, p := range h.Config.DNSPersonas {
+            if p.ID == *personaIDPtr {
+                pCopy := p
+                chosenPersona = &pCopy
+                break
+            }
+        }
+        if chosenPersona != nil {
+            effectiveDNSConfig = convertDNSPersonaConfig(chosenPersona.Config)
+            log.Printf("API %s Stream: Using Persona '%s' (config for entire stream). Rate: %.2f DPS, %d Burst", streamType, *personaIDPtr, effectiveDNSConfig.RateLimitDPS, effectiveDNSConfig.RateLimitBurst)
+        } else {
+            log.Printf("API %s Stream: Persona ID '%s' not found. Using server defaults.", streamType, *personaIDPtr)
+        }
+    } else if campaignIDPtr != nil {
+        log.Printf("API %s Stream: Campaign ID '%s' provided. Full campaign logic for stream persona TBD. Using server defaults.", streamType, *campaignIDPtr)
+    } else {
+        log.Printf("API %s Stream: No Persona/Campaign. Using server defaults.", streamType)
+    }
+    if streamRateLimiter == nil && effectiveDNSConfig.RateLimitDPS > 0 && effectiveDNSConfig.RateLimitBurst > 0 {
+        streamRateLimiter = rate.NewLimiter(rate.Limit(effectiveDNSConfig.RateLimitDPS), effectiveDNSConfig.RateLimitBurst)
+        log.Printf("API %s Stream: Initialized rate limiter: %.2f DPS, %d Burst", streamType, effectiveDNSConfig.RateLimitDPS, effectiveDNSConfig.RateLimitBurst)
+    } else if streamRateLimiter == nil {
+        log.Printf("API %s Stream: No rate limiting configured for this stream.", streamType)
+    }
+    h.configMutex.RUnlock()
+    if effectiveDNSConfig.MaxDomainsPerRequest > 0 && len(domainsQuery) > effectiveDNSConfig.MaxDomainsPerRequest {
+        log.Printf("API Error: %sValidateStreamHandler - Too many domains requested (%d) vs max allowed (%d).", streamType, len(domainsQuery), effectiveDNSConfig.MaxDomainsPerRequest)
+        http.Error(w, fmt.Sprintf("Too many domains. Max %d", effectiveDNSConfig.MaxDomainsPerRequest), http.StatusBadRequest)
+        return
+    }
+    validator := dnsvalidator.New(effectiveDNSConfig)
+    w.Header().Set("Content-Type", "text/event-stream")
+    w.Header().Set("Cache-Control", "no-cache")
+    w.Header().Set("Connection", "keep-alive")
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    eventID := 0
+    requestContext := r.Context()
+    totalDomains := len(domainsQuery)
+    log.Printf("API %s Stream: Starting to process %d domains in chunks of %d.", streamType, totalDomains, streamChunkSize)
+    for i := 0; i < totalDomains; i += streamChunkSize {
+        chunkEnd := i + streamChunkSize
+        if chunkEnd > totalDomains {
+            chunkEnd = totalDomains
+        }
+        currentChunk := domainsQuery[i:chunkEnd]
+        log.Printf("API %s Stream: Processing chunk %d of %d (domains %d-%d of %d).", streamType, (i/streamChunkSize)+1, (totalDomains+streamChunkSize-1)/streamChunkSize, i+1, chunkEnd, totalDomains)
+        for _, domain := range currentChunk {
+            eventID++
+            domainProcessingStart := time.Now()
+            select {
+            case <-requestContext.Done():
+                log.Printf("API %s Stream: Client disconnected (chunk loop) for domain %s.", streamType, domain)
+                fmt.Fprintf(w, "event: error\ndata: {\"message\": \"Client disconnected\"}\n\n")
+                flusher.Flush()
+                return
+            default:
+            }
+            if streamRateLimiter != nil {
+                log.Printf("API %s Stream: Domain '%s' (ID: %d) - Attempting token...", streamType, domain, eventID)
+                waitStart := time.Now()
+                if err := streamRateLimiter.Wait(requestContext); err != nil {
+                    log.Printf("API %s Stream: Domain '%s' (ID: %d) - Rate limiter error after %s: %v", streamType, domain, eventID, time.Since(waitStart), err)
+                    errorData := map[string]string{"domain": domain, "error": "Rate limit error: " + err.Error()}
+                    jsonData, _ := json.Marshal(errorData)
+                    fmt.Fprintf(w, "id: %d\nevent: dns_error\ndata: %s\n\n", eventID, string(jsonData))
+                    flusher.Flush()
+                    if err == context.Canceled || err == context.DeadlineExceeded {
+                        return
+                    }
+                    continue
+                }
+                log.Printf("API %s Stream: Domain '%s' (ID: %d) - Token acquired after %s.", streamType, domain, eventID, time.Since(waitStart))
+            }
+            log.Printf("API %s Stream: Domain '%s' (ID: %d) - Starting validation.", streamType, domain, eventID)
+            validationCallStart := time.Now()
+            result := validator.ValidateSingleDomain(domain, requestContext)
+            validationDuration := time.Since(validationCallStart)
+            totalDomainProcessingTime := time.Since(domainProcessingStart)
+            log.Printf("API %s Stream: Domain '%s' (ID: %d) - Validation took %s. Total domain processing: %s", streamType, domain, eventID, validationDuration, totalDomainProcessingTime)
+            jsonData, err := json.Marshal(result)
+            if err != nil {
+                log.Printf("API Error: %sValidateStreamHandler - Marshal error for %s: %v", streamType, domain, err)
+                errorData := map[string]string{"domain": domain, "error": "Marshal error: " + err.Error()}
+                jsonErrData, _ := json.Marshal(errorData)
+                fmt.Fprintf(w, "id: %d\nevent: dns_error\ndata: %s\n\n", eventID, string(jsonErrData))
+                flusher.Flush()
+                continue
+            }
+            fmt.Fprintf(w, "id: %d\nevent: dns_result\ndata: %s\n\n", eventID, string(jsonData))
+            flusher.Flush()
+        }
+        log.Printf("API %s Stream: Finished processing chunk ending with domain index %d.", streamType, chunkEnd-1)
+    }
+    fmt.Fprintf(w, "event: done\ndata: %s Stream completed for %d domains.\n\n", streamType, totalDomains)
+    flusher.Flush()
+    log.Printf("API %s Stream: Completed all chunks for %d domains.", streamType, totalDomains)
+}
+
+type HTTPValidationRequest struct {
+    Domains       []string `json:"domains"`
+    HTTPPersonaID *string  `json:"httpPersonaId,omitempty"`
+    KeywordSetID  *string  `json:"keywordSetId,omitempty"` // New field for keyword extraction
+}
+
+type HTTPValidationResponse struct {
+    Results []httpvalidator.ValidationResult `json:"results"`
+    Error   string                          `json:"error,omitempty"`
+}
+
+func (h *APIHandler) createHTTPClientForPersona(personaID *string) (*http.Client, string, map[string]string, int, *config.ProxyConfigEntry) {
+    h.configMutex.RLock()
+    serverDefaultHTTPCfg := h.Config.HTTPValidator
+    allLoadedHTTPPersonas := h.Config.HTTPPersonas
+    h.configMutex.RUnlock()
+    var effectiveUserAgent string
+    var effectiveHeaders map[string]string
+    var effectiveMaxRedirects int = serverDefaultHTTPCfg.MaxRedirects
+    var effectiveAllowInsecureTLS bool = serverDefaultHTTPCfg.AllowInsecureTLS
+    var effectiveCookieMode string = "session"
+    var effectiveTLSConfig *tls.Config
+    var effectiveForceHTTP2 bool = true
+    if personaID != nil && *personaID != "" {
+        var chosenPersona *config.HTTPPersona
+        for i := range allLoadedHTTPPersonas {
+            if allLoadedHTTPPersonas[i].ID == *personaID {
+                pCopy := allLoadedHTTPPersonas[i]
+                chosenPersona = &pCopy
+                break
+            }
+        }
+        if chosenPersona != nil {
+            log.Printf("API HTTP: Using Persona '%s'", *personaID)
+            effectiveUserAgent = chosenPersona.UserAgent
+            effectiveHeaders = chosenPersona.Headers
+            if chosenPersona.CookieHandling.Mode != "" {
+                effectiveCookieMode = chosenPersona.CookieHandling.Mode
+            }
+            tlsCfg := &tls.Config{InsecureSkipVerify: effectiveAllowInsecureTLS}
+            if chosenPersona.TLSClientHello.MinVersion != "" {
+                if v, ok := config.GetTLSVersion(chosenPersona.TLSClientHello.MinVersion); ok && v != 0 {
+                    tlsCfg.MinVersion = v
+                }
+            }
+            if chosenPersona.TLSClientHello.MaxVersion != "" {
+                if v, ok := config.GetTLSVersion(chosenPersona.TLSClientHello.MaxVersion); ok && v != 0 {
+                    tlsCfg.MaxVersion = v
+                }
+            }
+            if len(chosenPersona.TLSClientHello.CipherSuites) > 0 {
+                if s, e := config.GetCipherSuites(chosenPersona.TLSClientHello.CipherSuites); e == nil {
+                    tlsCfg.CipherSuites = s
+                } else {
+                    log.Printf("Warn: Persona '%s' invalid ciphers: %v", *personaID, e)
+                }
+            }
+            if len(chosenPersona.TLSClientHello.CurvePreferences) > 0 {
+                if c, e := config.GetCurvePreferences(chosenPersona.TLSClientHello.CurvePreferences); e == nil {
+                    tlsCfg.CurvePreferences = c
+                } else {
+                    log.Printf("Warn: Persona '%s' invalid curves: %v", *personaID, e)
+                }
+            }
+            effectiveTLSConfig = tlsCfg
+            if chosenPersona.HTTP2Settings.Enabled != nil {
+                effectiveForceHTTP2 = *chosenPersona.HTTP2Settings.Enabled
+            }
+        } else {
+            log.Printf("API HTTP: Persona ID '%s' not found. Using server defaults.", *personaID)
+        }
+    }
+    if effectiveUserAgent == "" {
+        if len(serverDefaultHTTPCfg.UserAgents) > 0 {
+            effectiveUserAgent = serverDefaultHTTPCfg.UserAgents[rand.Intn(len(serverDefaultHTTPCfg.UserAgents))]
+        } else {
+            effectiveUserAgent = "DomainFlowValidator/1.0 (DefaultUA)"
+        }
+        effectiveHeaders = serverDefaultHTTPCfg.DefaultHeaders
+        if effectiveTLSConfig == nil {
+            effectiveTLSConfig = &tls.Config{InsecureSkipVerify: serverDefaultHTTPCfg.AllowInsecureTLS}
+        }
+    }
+    var jar http.CookieJar
+    if strings.ToLower(effectiveCookieMode) == "session" {
+        jar, _ = cookiejar.New(nil)
+    }
+    var selectedProxyEntry *config.ProxyConfigEntry
+    var finalTransport *http.Transport
+    if h.ProxyMgr != nil {
+        proxyEntry, err := h.ProxyMgr.GetProxy()
+        if err == nil && proxyEntry != nil {
+            log.Printf("API HTTP: Attempting to use proxy ID '%s' (%s://%s)", proxyEntry.ID, proxyEntry.Protocol, proxyEntry.Address)
+            baseTransport, errTransport := proxymanager.GetHTTPTransportForProxy(proxyEntry)
+            if errTransport == nil && baseTransport != nil {
+                baseTransport.TLSClientConfig = effectiveTLSConfig
+                baseTransport.ForceAttemptHTTP2 = effectiveForceHTTP2
+                finalTransport = baseTransport
+                selectedProxyEntry = proxyEntry
+                log.Printf("API HTTP: Successfully configured transport with proxy ID '%s'", proxyEntry.ID)
+            } else {
+                log.Printf("API HTTP: Failed to get/configure transport for proxy ID '%s': %v. Falling back.", proxyEntry.ID, errTransport)
+            }
+        } else {
+            log.Printf("API HTTP: No healthy proxy available from ProxyManager (%v). Using direct connection.", err)
+        }
+    }
+    if finalTransport == nil {
+        log.Printf("API HTTP: Using direct connection (no proxy or fallback).")
+        finalTransport = &http.Transport{
+            TLSClientConfig:       effectiveTLSConfig,
+            Proxy:                 http.ProxyFromEnvironment,
+            ForceAttemptHTTP2:     effectiveForceHTTP2,
+            MaxIdleConns:          100,
+            IdleConnTimeout:       90 * time.Second,
+            TLSHandshakeTimeout:   10 * time.Second,
+            ExpectContinueTimeout: 1 * time.Second,
+            DisableKeepAlives:     false,
+        }
+    }
+    client := &http.Client{
+        Jar: jar,
+        Transport: finalTransport,
+        Timeout:   serverDefaultHTTPCfg.RequestTimeout,
+        CheckRedirect: func(req *http.Request, via []*http.Request) error {
+            if len(via) >= effectiveMaxRedirects {
+                return http.ErrUseLastResponse
+            }
+            return nil
+        },
+    }
+    return client, effectiveUserAgent, effectiveHeaders, effectiveMaxRedirects, selectedProxyEntry
+}
+
+func isProxyRelatedError(errStr string, proxyAddress string) bool {
+    if errStr == "" {
+        return false
+    }
+    lowerErr := strings.ToLower(errStr)
+    if strings.Contains(lowerErr, "proxyconnect") || (proxyAddress != "" && strings.Contains(lowerErr, strings.ToLower(strings.Split(proxyAddress, ":")[0]))) || (proxyAddress != "" && strings.Contains(lowerErr, strings.ToLower(proxyAddress))) || strings.Contains(lowerErr, "http: proxy error") || strings.Contains(lowerErr, "socks connect") {
+        return true
+    }
+    if strings.Contains(lowerErr, "connect: connection refused") {
+        if proxyAddress != "" && strings.Contains(lowerErr, strings.ToLower(proxyAddress)) {
+            return true
+        }
+    }
+    if strings.Contains(lowerErr, "no such host") {
+        if proxyAddress != "" && strings.Contains(lowerErr, strings.ToLower(strings.Split(proxyAddress, ":")[0])) {
+            return true
+        }
+    }
+    if proxyAddress != "" {
+        if strings.Contains(lowerErr, "context deadline exceeded") || strings.Contains(lowerErr, "i/o timeout") || strings.Contains(lowerErr, "unexpected eof") || strings.Contains(lowerErr, "connection reset by peer") {
+            return true
+        }
+    }
+    return false
+}
+
+func (h *APIHandler) HTTPValidateHandler(w http.ResponseWriter, r *http.Request) {
+    var req HTTPValidationRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+    defer r.Body.Close()
+    if len(req.Domains) == 0 {
+        http.Error(w, "No domains provided", http.StatusBadRequest)
+        return
+    }
+    h.configMutex.RLock()
+    serverDefaultHTTPConfig := h.Config.HTTPValidator
+    h.configMutex.RUnlock()
+    if serverDefaultHTTPConfig.MaxDomainsPerRequest > 0 && len(req.Domains) > serverDefaultHTTPConfig.MaxDomainsPerRequest {
+        http.Error(w, fmt.Sprintf("Too many domains. Max %d", serverDefaultHTTPConfig.MaxDomainsPerRequest), http.StatusBadRequest)
+        return
+    }
+    clientToUse, ua, headers, _, usedProxyForBatch := h.createHTTPClientForPersona(req.HTTPPersonaID)
+    batchTimeout := serverDefaultHTTPConfig.RequestTimeout * time.Duration(len(req.Domains))
+    if len(req.Domains) > 1 {
+        batchTimeout += 5 * time.Second
+    } else {
+        batchTimeout += 2 * time.Second
+    }
+    batchCtx, batchCancel := context.WithTimeout(r.Context(), batchTimeout)
+    defer batchCancel()
+    log.Printf("API HTTP Batch: Validating %d domains using User-Agent: '%s'. Proxy: %s", len(req.Domains), ua, getProxyLogStr(usedProxyForBatch))
+    httpVal := httpvalidator.New(serverDefaultHTTPConfig)
+    results := httpVal.ValidateDomainsWithClient(req.Domains, clientToUse, ua, headers, batchCtx)
+    if usedProxyForBatch != nil && h.ProxyMgr != nil {
+        batchOverallProxyCallSuccess := true
+        var firstProxyRelatedErrorEncountered error
+        for _, res := range results {
+            if isProxyRelatedError(res.Error, usedProxyForBatch.Address) {
+                batchOverallProxyCallSuccess = false
+                firstProxyRelatedErrorEncountered = errors.New(res.Error)
+                log.Printf("API HTTP Batch: Proxy ID '%s' encountered a proxy-related error for domain '%s': %s", usedProxyForBatch.ID, res.Domain, res.Error)
+                break
+            }
+        }
+        h.ProxyMgr.ReportProxyHealth(usedProxyForBatch.ID, batchOverallProxyCallSuccess, firstProxyRelatedErrorEncountered)
+    }
+    w.Header().Set("Content-Type", "application/json")
+    if err := json.NewEncoder(w).Encode(HTTPValidationResponse{Results: results}); err != nil {
+        log.Printf("API Error: Encoding HTTP validation response: %v", err)
+        http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+    }
+}
+
+func (h *APIHandler) HTTPValidateStreamHandler(w http.ResponseWriter, r *http.Request) {
+    streamType := "HTTP"
+    flusher, ok := w.(http.Flusher)
+    if !ok {
+        log.Printf("API Error: %sValidateStreamHandler - Streaming unsupported.", streamType)
+        http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
+        return
+    }
+    domainsQuery := r.URL.Query()["domain"]
+    if len(domainsQuery) == 0 {
+        log.Printf("API Error: %sValidateStreamHandler - No domains provided.", streamType)
+        http.Error(w, "No domains provided", http.StatusBadRequest)
+        return
+    }
+    personaIDQuery := r.URL.Query().Get("httpPersonaId")
+    var personaIDPtr *string
+    if personaIDQuery != "" {
+        personaIDPtr = &personaIDQuery
+    }
+    h.configMutex.RLock()
+    serverDefaultHTTPConfig := h.Config.HTTPValidator
+    var streamRateLimiter *rate.Limiter
+    streamChunkSize := h.Config.Server.StreamChunkSize
+    if streamChunkSize <= 0 {
+        streamChunkSize = config.DefaultStreamChunkSize
+    }
+    if personaIDPtr != nil {
+        var chosenPersona *config.HTTPPersona
+        for _, p := range h.Config.HTTPPersonas {
+            if p.ID == *personaIDPtr {
+                pCopy := p
+                chosenPersona = &pCopy
+                break
+            }
+        }
+        if chosenPersona != nil {
+            log.Printf("API %s Stream: Using Persona '%s' settings for client creation per chunk.", streamType, *personaIDPtr)
+            if chosenPersona.RateLimitDPS > 0 && chosenPersona.RateLimitBurst > 0 {
+                streamRateLimiter = rate.NewLimiter(rate.Limit(chosenPersona.RateLimitDPS), chosenPersona.RateLimitBurst)
+                log.Printf("API %s Stream: Persona '%s' rate limits applied: DPS=%.2f, Burst=%d", streamType, *personaIDPtr, chosenPersona.RateLimitDPS, chosenPersona.RateLimitBurst)
+            } else {
+                log.Printf("API %s Stream: Persona '%s' has no specific rate limits, server defaults for rate limiting will apply if configured.", streamType, *personaIDPtr)
+            }
+        } else {
+            log.Printf("API %s Stream: Persona ID '%s' not found. Using server defaults for client and rate limiting.", streamType, *personaIDPtr)
+        }
+    } else {
+        log.Printf("API %s Stream: No Persona ID. Using server defaults for client and rate limiting.", streamType)
+    }
+    if streamRateLimiter == nil && serverDefaultHTTPConfig.RateLimitDPS > 0 && serverDefaultHTTPConfig.RateLimitBurst > 0 {
+        streamRateLimiter = rate.NewLimiter(rate.Limit(serverDefaultHTTPConfig.RateLimitDPS), serverDefaultHTTPConfig.RateLimitBurst)
+        log.Printf("API %s Stream: Using server default HTTP rate limits: DPS=%.2f, Burst=%d", streamType, serverDefaultHTTPConfig.RateLimitDPS, serverDefaultHTTPConfig.RateLimitBurst)
+    } else if streamRateLimiter == nil {
+        log.Printf("API %s Stream: No rate limiting configured for this stream.", streamType)
+    }
+    h.configMutex.RUnlock()
+    if serverDefaultHTTPConfig.MaxDomainsPerRequest > 0 && len(domainsQuery) > serverDefaultHTTPConfig.MaxDomainsPerRequest {
+        log.Printf("API Error: %sValidateStreamHandler - Too many domains requested (%d) vs max allowed (%d).", streamType, len(domainsQuery), serverDefaultHTTPConfig.MaxDomainsPerRequest)
+        http.Error(w, fmt.Sprintf("Too many domains. Max %d", serverDefaultHTTPConfig.MaxDomainsPerRequest), http.StatusBadRequest)
+        return
+    }
+    httpVal := httpvalidator.New(serverDefaultHTTPConfig)
+    w.Header().Set("Content-Type", "text/event-stream")
+    w.Header().Set("Cache-Control", "no-cache")
+    w.Header().Set("Connection", "keep-alive")
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    eventID := 0
+    requestContext := r.Context()
+    totalDomains := len(domainsQuery)
+    log.Printf("API %s Stream: Starting to process %d domains in chunks of %d.", streamType, totalDomains, streamChunkSize)
+    for i := 0; i < totalDomains; i += streamChunkSize {
+        chunkEnd := i + streamChunkSize
+        if chunkEnd > totalDomains {
+            chunkEnd = totalDomains
+        }
+        currentChunk := domainsQuery[i:chunkEnd]
+        httpClient, userAgent, headers, _, usedProxyForChunk := h.createHTTPClientForPersona(personaIDPtr)
+        log.Printf("API %s Stream: Processing chunk %d of %d (domains %d-%d of %d). Client UA: '%s'. Proxy: %s", streamType, (i/streamChunkSize)+1, (totalDomains+streamChunkSize-1)/streamChunkSize, i+1, chunkEnd, totalDomains, userAgent, getProxyLogStr(usedProxyForChunk))
+        for _, domain := range currentChunk {
+            eventID++
+            domainProcessingStart := time.Now()
+            select {
+            case <-requestContext.Done():
+                log.Printf("API %s Stream: Client disconnected (chunk loop) for domain %s.", streamType, domain)
+                fmt.Fprintf(w, "event: error\ndata: {\"message\": \"Client disconnected\"}\n\n")
+                flusher.Flush()
+                return
+            default:
+            }
+            if streamRateLimiter != nil {
+                log.Printf("API %s Stream: Domain '%s' (ID: %d) - Attempting token...", streamType, domain, eventID)
+                waitStart := time.Now()
+                if err := streamRateLimiter.Wait(requestContext); err != nil {
+                    log.Printf("API %s Stream: Domain '%s' (ID: %d) - Rate limiter error after %s: %v", streamType, domain, eventID, time.Since(waitStart), err)
+                    errorData := map[string]string{"domain": domain, "error": "Rate limit error: " + err.Error()}
+                    jsonData, _ := json.Marshal(errorData)
+                    fmt.Fprintf(w, "id: %d\nevent: http_error\ndata: %s\n\n", eventID, string(jsonData))
+                    flusher.Flush()
+                    if err == context.Canceled || err == context.DeadlineExceeded {
+                        return
+                    }
+                    continue
+                }
+                log.Printf("API %s Stream: Domain '%s' (ID: %d) - Token acquired after %s.", streamType, domain, eventID, time.Since(waitStart))
+            }
+            log.Printf("API %s Stream: Domain '%s' (ID: %d) - Starting validation.", streamType, domain, eventID)
+            validationCallStart := time.Now()
+            result := httpVal.ValidateSingleDomainWithClient(domain, httpClient, userAgent, headers, requestContext)
+            validationDuration := time.Since(validationCallStart)
+            totalDomainProcessingTime := time.Since(domainProcessingStart)
+            log.Printf("API %s Stream: Domain '%s' (ID: %d) - Validation took %s. Total domain processing: %s", streamType, domain, eventID, validationDuration, totalDomainProcessingTime)
+            if usedProxyForChunk != nil && h.ProxyMgr != nil {
+                isActualProxyFailure := isProxyRelatedError(result.Error, usedProxyForChunk.Address)
+                proxyCallConsideredSuccessful := !isActualProxyFailure
+                var errorForReportingToProxyMgr error
+                if isActualProxyFailure {
+                    errorForReportingToProxyMgr = errors.New(result.Error)
+                }
+                h.ProxyMgr.ReportProxyHealth(usedProxyForChunk.ID, proxyCallConsideredSuccessful, errorForReportingToProxyMgr)
+            }
+            jsonData, err := json.Marshal(result)
+            if err != nil {
+                log.Printf("API Error: %sValidateStreamHandler - Marshal error for %s: %v", streamType, domain, err)
+                errorData := map[string]string{"domain": domain, "error": "Marshal error: " + err.Error()}
+                jsonErrData, _ := json.Marshal(errorData)
+                fmt.Fprintf(w, "id: %d\nevent: http_error\ndata: %s\n\n", eventID, string(jsonErrData))
+                flusher.Flush()
+                continue
+            }
+            fmt.Fprintf(w, "id: %d\nevent: http_result\ndata: %s\n\n", eventID, string(jsonData))
+            flusher.Flush()
+        }
+        log.Printf("API %s Stream: Finished processing chunk ending with domain index %d.", streamType, chunkEnd-1)
+    }
+    fmt.Fprintf(w, "event: done\ndata: %s Stream completed for %d domains.\n\n", streamType, totalDomains)
+    flusher.Flush()
+    log.Printf("API %s Stream: Completed all chunks for %d domains.", streamType, totalDomains)
+}
+
+func getProxyLogStr(p *config.ProxyConfigEntry) string {
+    if p == nil {
+        return "<none>"
+    }
+    return fmt.Sprintf("ID %s (%s://%s)", p.ID, p.Protocol, p.Address)
+}
+
+func (h *APIHandler) ListProxiesHandler(w http.ResponseWriter, r *http.Request) {
+    h.configMutex.RLock()
+    proxiesToReturn := make([]config.ProxyConfigEntry, len(h.Config.Proxies))
+    copy(proxiesToReturn, h.Config.Proxies)
+    h.configMutex.RUnlock()
+    sort.Slice(proxiesToReturn, func(i, j int) bool {
+        return proxiesToReturn[i].ID < proxiesToReturn[j].ID
+    })
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(proxiesToReturn)
+}
+
+func (h *APIHandler) GetProxyStatusesHandler(w http.ResponseWriter, r *http.Request) {
+    if h.ProxyMgr == nil {
+        log.Println("API Error: GetProxyStatusesHandler - ProxyManager not initialized.")
+        http.Error(w, "ProxyManager not available", http.StatusInternalServerError)
+        return
+    }
+    statuses := h.ProxyMgr.GetAllProxyStatuses()
+    sort.Slice(statuses, func(i, j int) bool {
+        return statuses[i].ID < statuses[j].ID
+    })
+    w.Header().Set("Content-Type", "application/json")
+    if err := json.NewEncoder(w).Encode(statuses); err != nil {
+        log.Printf("API Error: GetProxyStatusesHandler - Failed to encode proxy statuses: %v", err)
+        http.Error(w, "Failed to encode proxy statuses", http.StatusInternalServerError)
+    }
+}
+
+func (h *APIHandler) ForceCheckSingleProxyHandler(w http.ResponseWriter, r *http.Request) {
+    if h.ProxyMgr == nil {
+        log.Println("API Error: ForceCheckSingleProxyHandler - ProxyManager not initialized.")
+        http.Error(w, "ProxyManager not available", http.StatusInternalServerError)
+        return
+    }
+    vars := mux.Vars(r)
+    proxyID, ok := vars["proxyId"]
+    if !ok {
+        http.Error(w, "Proxy ID missing in path", http.StatusBadRequest)
+        return
+    }
+    log.Printf("API: Received request to force health check for proxy ID '%s'", proxyID)
+    updatedStatus, err := h.ProxyMgr.ForceCheckSingleProxy(proxyID)
+    if err != nil {
+        log.Printf("API Error: ForceCheckSingleProxyHandler - Error checking proxy ID '%s': %v", proxyID, err)
+        http.Error(w, err.Error(), http.StatusNotFound)
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    if err := json.NewEncoder(w).Encode(updatedStatus); err != nil {
+        log.Printf("API Error: ForceCheckSingleProxyHandler - Failed to encode updated proxy status for ID '%s': %v", proxyID, err)
+        http.Error(w, "Failed to encode proxy status", http.StatusInternalServerError)
+    }
+}
+
+func (h *APIHandler) ForceCheckAllProxiesHandler(w http.ResponseWriter, r *http.Request) {
+    if h.ProxyMgr == nil {
+        log.Println("API Error: ForceCheckAllProxiesHandler - ProxyManager not initialized.")
+        http.Error(w, "ProxyManager not available", http.StatusInternalServerError)
+        return
+    }
+    var reqBody struct {
+        IDs []string `json:"ids"`
+    }
+    if r.Body != nil && r.ContentLength > 0 {
+        bodyBytes, err := ioutil.ReadAll(r.Body)
+        if err == nil && len(bodyBytes) > 0 {
+            if errUnmarshal := json.Unmarshal(bodyBytes, &reqBody); errUnmarshal != nil {
+                log.Printf("API Error: ForceCheckAllProxiesHandler - Invalid JSON in request body: %v", errUnmarshal)
+                http.Error(w, "Invalid JSON in request body: "+errUnmarshal.Error(), http.StatusBadRequest)
+                return
+            }
+        } else if err != nil {
+            log.Printf("API Error: ForceCheckAllProxiesHandler - Failed to read request body: %v", err)
+            http.Error(w, "Failed to read request body: "+err.Error(), http.StatusInternalServerError)
+            return
+        }
+        defer r.Body.Close()
+    }
+    var message string
+    if len(reqBody.IDs) > 0 {
+        log.Printf("API: Received request to force health check for %d specific proxy IDs.", len(reqBody.IDs))
+        h.ProxyMgr.ForceCheckProxiesAsync(reqBody.IDs)
+        message = fmt.Sprintf("Health check process initiated for %d specified proxies. Check /api/v1/proxies/status for updates.", len(reqBody.IDs))
+    } else {
+        log.Printf("API: Received request to force health check for ALL managed proxies.")
+        h.ProxyMgr.ForceCheckProxiesAsync(nil)
+        message = "Health check process initiated for all managed proxies. Check /api/v1/proxies/status for updates."
+    }
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusAccepted)
+    json.NewEncoder(w).Encode(map[string]string{"message": message})
+}
+
+func (h *APIHandler) AddProxyHandler(w http.ResponseWriter, r *http.Request) {
+    var newProxy config.ProxyConfigEntry
+    if err := json.NewDecoder(r.Body).Decode(&newProxy); err != nil {
+        http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+    defer r.Body.Close()
+    if newProxy.ID == "" || newProxy.Protocol == "" || newProxy.Address == "" {
+        http.Error(w, "Proxy ID, Protocol, and Address are required", http.StatusBadRequest)
+        return
+    }
+    validProtocols := map[string]bool{"http": true, "https": true}
+    if !validProtocols[strings.ToLower(newProxy.Protocol)] {
+        http.Error(w, "Invalid proxy protocol. Supported: http, https", http.StatusBadRequest)
+        return
+    }
+    h.configMutex.Lock()
+    defer h.configMutex.Unlock()
+    for _, p := range h.Config.Proxies {
+        if p.ID == newProxy.ID {
+            http.Error(w, fmt.Sprintf("Proxy ID '%s' already exists", newProxy.ID), http.StatusConflict)
+            return
+        }
+    }
+    h.Config.Proxies = append(h.Config.Proxies, newProxy)
+    configDir := filepath.Dir(h.Config.GetLoadedFromPath())
+    if h.Config.GetLoadedFromPath() == "" || filepath.Base(h.Config.GetLoadedFromPath()) == h.Config.GetLoadedFromPath() {
+        cwd, _ := os.Getwd()
+        configDir = cwd
+    }
+    if err := config.SaveProxies(h.Config.Proxies, configDir); err != nil {
+        log.Printf("API Error: Failed to save proxies: %v.", err)
+    }
+    log.Printf("API: Added new proxy: ID='%s'", newProxy.ID)
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(newProxy)
+}
+
+// UpdateProxyHandler updates an existing proxy's configuration.
+func (h *APIHandler) UpdateProxyHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	proxyID, ok := vars["proxyId"]
+	if !ok {
+		http.Error(w, "Proxy ID missing", http.StatusBadRequest)
+		return
+	}
+
+	// Define a struct to capture all possible updatable fields, using pointers for optionality
+	var reqUpdate struct {
+		Name        *string `json:"name"`
+		Description *string `json:"description"`
+		Protocol    *string `json:"protocol"`
+		Address     *string `json:"address"`
+		Username    *string `json:"username"`
+		Password    *string `json:"password"`
+		Notes       *string `json:"notes"`
+		UserEnabled *bool   `json:"userEnabled"` // New optional field
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&reqUpdate); err != nil {
+		http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	// Validate protocol if provided
+	if reqUpdate.Protocol != nil && *reqUpdate.Protocol != "" {
+		validProtocols := map[string]bool{"http": true, "https": true}
+		if !validProtocols[strings.ToLower(*reqUpdate.Protocol)] {
+			http.Error(w, "Invalid proxy protocol. Supported: http, https", http.StatusBadRequest)
+			return
+		}
+	}
+
+	h.configMutex.Lock() // Lock for h.Config.Proxies
+	defer h.configMutex.Unlock()
+
+	foundIndex := -1
+	for i, p := range h.Config.Proxies {
+		if p.ID == proxyID {
+			foundIndex = i
+			break
+		}
+	}
+
+	if foundIndex == -1 {
+		http.Error(w, fmt.Sprintf("Proxy ID '%s' not found", proxyID), http.StatusNotFound)
+		return
+	}
+
+	// Apply updates from request
+	configActuallyChanged := false // Flag to track if we need to save the proxies.json file
+
+	if reqUpdate.Name != nil {
+		if h.Config.Proxies[foundIndex].Name != *reqUpdate.Name {
+			h.Config.Proxies[foundIndex].Name = *reqUpdate.Name
+			configActuallyChanged = true
+		}
+	}
+	if reqUpdate.Description != nil {
+		if h.Config.Proxies[foundIndex].Description != *reqUpdate.Description {
+			h.Config.Proxies[foundIndex].Description = *reqUpdate.Description
+			configActuallyChanged = true
+		}
+	}
+	if reqUpdate.Protocol != nil && *reqUpdate.Protocol != "" {
+		if h.Config.Proxies[foundIndex].Protocol != *reqUpdate.Protocol {
+			h.Config.Proxies[foundIndex].Protocol = *reqUpdate.Protocol
+			configActuallyChanged = true
+		}
+	}
+	if reqUpdate.Address != nil && *reqUpdate.Address != "" {
+		if h.Config.Proxies[foundIndex].Address != *reqUpdate.Address {
+			h.Config.Proxies[foundIndex].Address = *reqUpdate.Address
+			configActuallyChanged = true
+		}
+	}
+	if reqUpdate.Username != nil { // Allow setting to empty string
+		if h.Config.Proxies[foundIndex].Username != *reqUpdate.Username {
+			h.Config.Proxies[foundIndex].Username = *reqUpdate.Username
+			configActuallyChanged = true
+		}
+	}
+	if reqUpdate.Password != nil { // Allow setting to empty string
+		if h.Config.Proxies[foundIndex].Password != *reqUpdate.Password {
+			h.Config.Proxies[foundIndex].Password = *reqUpdate.Password
+			configActuallyChanged = true
+		}
+	}
+	if reqUpdate.Notes != nil {
+		if h.Config.Proxies[foundIndex].Notes != *reqUpdate.Notes {
+			h.Config.Proxies[foundIndex].Notes = *reqUpdate.Notes
+			configActuallyChanged = true
+		}
+	}
+
+	// Handle UserEnabled status
+	if reqUpdate.UserEnabled != nil {
+		// Update in-memory config.ProxyConfigEntry
+		// Ensure UserEnabled on ProxyConfigEntry is initialized if it was nil
+		if h.Config.Proxies[foundIndex].UserEnabled == nil || *h.Config.Proxies[foundIndex].UserEnabled != *reqUpdate.UserEnabled {
+			h.Config.Proxies[foundIndex].UserEnabled = reqUpdate.UserEnabled // Assign the pointer
+			configActuallyChanged = true
+			log.Printf("API: UserEnabled for proxy ID '%s' set to %t in config.", proxyID, *reqUpdate.UserEnabled)
+
+			// Inform ProxyManager immediately to update its internal state and active list
+			if h.ProxyMgr != nil {
+				err := h.ProxyMgr.UpdateProxyUserEnabledStatus(proxyID, *reqUpdate.UserEnabled)
+				if err != nil {
+					// Log the error but don't necessarily fail the whole update if saving config still works
+					log.Printf("API Warning: Failed to update ProxyManager state for UserEnabled on proxy ID '%s': %v", proxyID, err)
+				}
+			}
+		}
+	}
+
+	if configActuallyChanged {
+		configDir := filepath.Dir(h.Config.GetLoadedFromPath())
+		if h.Config.GetLoadedFromPath() == "" || filepath.Base(h.Config.GetLoadedFromPath()) == h.Config.GetLoadedFromPath() {
+			cwd, _ := os.Getwd()
+			configDir = cwd
+		}
+		if err := config.SaveProxies(h.Config.Proxies, configDir); err != nil {
+			log.Printf("API Error: UpdateProxyHandler - Failed to save proxies: %v.", err)
+			// Potentially return an error to the client if persistence fails
+		}
+		log.Printf("API: Updated proxy details for ID='%s' and saved to proxies.config.json", proxyID)
+	} else {
+		log.Printf("API: No changes detected for proxy ID='%s'. No save needed.", proxyID)
+	}
+
+	// Return the current state of the proxy from h.Config.Proxies
+	// (which reflects changes even if save failed, but ProxyManager state was updated)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(h.Config.Proxies[foundIndex])
+    }
+
+func (h *APIHandler) DeleteProxyHandler(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    proxyID, ok := vars["proxyId"]
+    if !ok {
+        http.Error(w, "Proxy ID missing", http.StatusBadRequest)
+        return
+    }
+    h.configMutex.Lock()
+    defer h.configMutex.Unlock()
+    foundIndex := -1
+    for i, p := range h.Config.Proxies {
+        if p.ID == proxyID {
+            foundIndex = i
+            break
+        }
+    }
+    if foundIndex != -1 {
+        h.Config.Proxies = append(h.Config.Proxies[:foundIndex], h.Config.Proxies[foundIndex+1:]...)
+        configDir := filepath.Dir(h.Config.GetLoadedFromPath())
+        if h.Config.GetLoadedFromPath() == "" || filepath.Base(h.Config.GetLoadedFromPath()) == h.Config.GetLoadedFromPath() {
+            cwd, _ := os.Getwd()
+            configDir = cwd
+        }
+        if err := config.SaveProxies(h.Config.Proxies, configDir); err != nil {
+            log.Printf("API Error: Failed to save proxies after deletion: %v.", err)
+        }
+        log.Printf("API: Deleted proxy: ID='%s'", proxyID)
+        w.WriteHeader(http.StatusNoContent)
+        return
+    }
+    http.Error(w, fmt.Sprintf("Proxy ID '%s' not found", proxyID), http.StatusNotFound)
+}
+
+func (h *APIHandler) TestProxyHandler(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    proxyID, ok := vars["proxyId"]
+    if !ok {
+        http.Error(w, "Proxy ID missing", http.StatusBadRequest)
+        return
+    }
+    h.configMutex.RLock()
+    var targetProxy *config.ProxyConfigEntry
+    for _, p := range h.Config.Proxies {
+        if p.ID == proxyID {
+            pCopy := p
+            targetProxy = &pCopy
+            break
+        }
+    }
+    h.configMutex.RUnlock()
+    if targetProxy == nil {
+        http.Error(w, fmt.Sprintf("Proxy ID '%s' not found for testing", proxyID), http.StatusNotFound)
+        return
+    }
+    lcProtocol := strings.ToLower(targetProxy.Protocol)
+    if lcProtocol != "http" && lcProtocol != "https" {
+        errorMsg := fmt.Sprintf("Proxy ID '%s' has unsupported protocol '%s' for testing. Supported: http, https.", targetProxy.ID, targetProxy.Protocol)
+        log.Printf("API: %s", errorMsg)
+        testResult := proxymanager.ProxyTestResult{
+            ProxyID:    targetProxy.ID,
+            Success:    false,
+            Error:      errorMsg,
+            DurationMs: 0,
+        }
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusBadRequest)
+        json.NewEncoder(w).Encode(testResult)
+        return
+    }
+    log.Printf("API: Testing proxy ID '%s' (%s://%s)", targetProxy.ID, targetProxy.Protocol, targetProxy.Address)
+    testResult := proxymanager.TestProxy(*targetProxy)
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(testResult)
+}
+
+func (h *APIHandler) GetServerConfigHandler(w http.ResponseWriter, r *http.Request) {
+    h.configMutex.RLock()
+    serverConfigDTO := struct {
+        Port            string `json:"port"`
+        StreamChunkSize int    `json:"streamChunkSize"`
+    }{
+        Port:            h.Config.Server.Port,
+        StreamChunkSize: h.Config.Server.StreamChunkSize,
+    }
+    h.configMutex.RUnlock()
+    w.Header().Set("Content-Type", "application/json")
+    if err := json.NewEncoder(w).Encode(serverConfigDTO); err != nil {
+        log.Printf("API Error: GetServerConfigHandler - Failed to encode server config: %v", err)
+        http.Error(w, "Failed to encode server config", http.StatusInternalServerError)
+    }
+}
+
+func (h *APIHandler) UpdateServerConfigHandler(w http.ResponseWriter, r *http.Request) {
+    var reqServerConfigUpdate struct {
+        StreamChunkSize *int `json:"streamChunkSize"`
+    }
+    if err := json.NewDecoder(r.Body).Decode(&reqServerConfigUpdate); err != nil {
+        http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+    defer r.Body.Close()
+    configChanged := false
+    h.configMutex.Lock()
+    if reqServerConfigUpdate.StreamChunkSize != nil {
+        if *reqServerConfigUpdate.StreamChunkSize > 0 {
+            if h.Config.Server.StreamChunkSize != *reqServerConfigUpdate.StreamChunkSize {
+                h.Config.Server.StreamChunkSize = *reqServerConfigUpdate.StreamChunkSize
+                configChanged = true
+                log.Printf("API: Server StreamChunkSize updated to: %d", h.Config.Server.StreamChunkSize)
+            }
+        } else {
+            log.Printf("API Warning: UpdateServerConfigHandler - Invalid StreamChunkSize received: %d. Value must be > 0. Not updating.", *reqServerConfigUpdate.StreamChunkSize)
+        }
+    }
+    if configChanged {
+        if err := config.Save(h.Config, h.Config.GetLoadedFromPath()); err != nil {
+            h.configMutex.Unlock()
+            log.Printf("API Error: UpdateServerConfigHandler - Failed to save updated server config: %v", err)
+            http.Error(w, "Failed to save server configuration", http.StatusInternalServerError)
+            return
+        }
+    }
+    h.configMutex.Unlock()
+    currentServerConfigDTO := struct {
+        Port            string `json:"port"`
+        StreamChunkSize int    `json:"streamChunkSize"`
+    }{
+        Port:            h.Config.Server.Port,
+        StreamChunkSize: h.Config.Server.StreamChunkSize,
+    }
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(currentServerConfigDTO)
+}
+
+func (h *APIHandler) GetDNSConfigHandler(w http.ResponseWriter, r *http.Request) {
+    h.configMutex.RLock()
+    dnsConfigJSON := config.ConvertDNSConfigToJSON(h.Config.DNSValidator)
+    h.configMutex.RUnlock()
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(dnsConfigJSON)
+}
+
+func (h *APIHandler) UpdateDNSConfigHandler(w http.ResponseWriter, r *http.Request) {
+    var reqJSON config.DNSValidatorConfigJSON
+    if err := json.NewDecoder(r.Body).Decode(&reqJSON); err != nil {
+        http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+    defer r.Body.Close()
+    updatedDNSConfig := config.ConvertJSONToDNSConfig(reqJSON)
+    h.configMutex.Lock()
+    h.Config.DNSValidator = updatedDNSConfig
+    configToSave := *h.Config
+    h.configMutex.Unlock()
+    if err := config.Save(&configToSave, configToSave.GetLoadedFromPath()); err != nil {
+        log.Printf("API Error: Failed to save updated DNS config: %v", err)
+        http.Error(w, "Failed to save DNS configuration", http.StatusInternalServerError)
+        return
+    }
+    log.Printf("API: Updated server default DNS configuration.")
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(reqJSON)
+}
+
+func (h *APIHandler) GetHTTPConfigHandler(w http.ResponseWriter, r *http.Request) {
+    h.configMutex.RLock()
+    httpConfigJSON := config.ConvertHTTPConfigToJSON(h.Config.HTTPValidator)
+    h.configMutex.RUnlock()
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(httpConfigJSON)
+}
+
+func (h *APIHandler) UpdateHTTPConfigHandler(w http.ResponseWriter, r *http.Request) {
+    var reqJSON config.HTTPValidatorConfigJSON
+    if err := json.NewDecoder(r.Body).Decode(&reqJSON); err != nil {
+        http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+    defer r.Body.Close()
+    updatedHTTPConfig := config.ConvertJSONToHTTPConfig(reqJSON)
+    h.configMutex.Lock()
+    h.Config.HTTPValidator = updatedHTTPConfig
+    configToSave := *h.Config
+    h.configMutex.Unlock()
+    if err := config.Save(&configToSave, configToSave.GetLoadedFromPath()); err != nil {
+        log.Printf("API Error: Failed to save updated HTTP config: %v", err)
+        http.Error(w, "Failed to save HTTP configuration", http.StatusInternalServerError)
+        return
+    }
+    log.Printf("API: Updated server default HTTP configuration.")
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(reqJSON)
+}
+
+func (h *APIHandler) GetLoggingConfigHandler(w http.ResponseWriter, r *http.Request) {
+    h.configMutex.RLock()
+    loggingConfig := h.Config.Logging
+    h.configMutex.RUnlock()
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(loggingConfig)
+}
+
+func (h *APIHandler) UpdateLoggingConfigHandler(w http.ResponseWriter, r *http.Request) {
+    var reqLogging config.LoggingConfig
+    if err := json.NewDecoder(r.Body).Decode(&reqLogging); err != nil {
+        http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+    defer r.Body.Close()
+    h.configMutex.Lock()
+    h.Config.Logging = reqLogging
+    configToSave := *h.Config
+    h.configMutex.Unlock()
+    if err := config.Save(&configToSave, configToSave.GetLoadedFromPath()); err != nil {
+        log.Printf("API Error: Failed to save updated Logging config: %v", err)
+        http.Error(w, "Failed to save Logging configuration", http.StatusInternalServerError)
+        return
+    }
+    log.Printf("API: Updated server Logging configuration. New level: %s", reqLogging.Level)
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(reqLogging)
+}
+
+// Utility function to send JSON errors
+func respondWithError(w http.ResponseWriter, code int, message string) {
+    respondWithJSON(w, code, map[string]string{"error": message})
+}
+
+// Utility function to send JSON responses
+func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+    response, err := json.Marshal(payload)
+    if err != nil {
+        log.Printf("API Error: Failed to marshal JSON response: %v", err)
+        w.WriteHeader(http.StatusInternalServerError)
+        w.Write([]byte("{\"error\": \"Failed to marshal JSON response\"}"))
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(code)
+    if payload != nil {
+        w.Write(response)
+    }
+}
+
+// KeywordSetListItem defines the structure for listing keyword sets.
+type KeywordSetListItem struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	RuleCount   int    `json:"ruleCount"`
+}
+
+// ListKeywordSetsHandler lists all available keyword sets.
+func (h *APIHandler) ListKeywordSetsHandler(w http.ResponseWriter, r *http.Request) {
+	h.configMutex.RLock()
+	kkeywordSets := h.Config.KeywordSets // Assuming AppConfig has KeywordSets field
+	h.configMutex.RUnlock()
+
+	if kkeywordSets == nil {
+		kkeywordSets = []config.KeywordSet{} // Ensure not nil if no sets are loaded
+	}
+
+	responseItems := make([]KeywordSetListItem, len(kkeywordSets))
+	for i, ks := range kkeywordSets {
+		responseItems[i] = KeywordSetListItem{
+			ID:          ks.ID,
+			Name:        ks.Name,
+			Description: ks.Description,
+			RuleCount:   len(ks.Rules),
+		}
+	}
+	respondWithJSON(w, http.StatusOK, responseItems)
+}

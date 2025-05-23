@@ -1,0 +1,58 @@
+{
+  "server": {
+    "port": "8080",
+    "apiKey": "641f018600f939b24bb496ea87e6bb2edf1922457a058d5a3aa27a00c7073147",
+    "streamChunkSize": 50
+  },
+  "dnsValidator": {
+    "resolvers": [
+      "https://cloudflare-dns.com/dns-query",
+      "1.1.1.1:53",
+      "https://dns.google/dns-query",
+      "8.8.8.8:53",
+      "9.9.9.9:53"
+    ],
+    "useSystemResolvers": false,
+    "queryTimeoutSeconds": 5,
+    "maxDomainsPerRequest": 100,
+    "resolverStrategy": "random_rotation",
+    "resolversWeighted": {
+      "1.1.1.1:53": 20,
+      "https://cloudflare-dns.com/dns-query": 50,
+      "https://dns.google/dns-query": 30
+    },
+    "resolversPreferredOrder": [
+      "1.1.1.1:53",
+      "https://cloudflare-dns.com/dns-query"
+    ],
+    "concurrentQueriesPerDomain": 2,
+    "queryDelayMaxMs": 20,
+    "maxConcurrentGoroutines": 15,
+    "rateLimitDps": 10,
+    "rateLimitBurst": 5
+  },
+  "httpValidator": {
+    "userAgents": [
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36",
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36",
+      "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0"
+    ],
+    "defaultHeaders": {
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+      "Accept-Encoding": "gzip, deflate, br",
+      "Accept-Language": "en-US,en;q=0.5",
+      "Connection": "keep-alive",
+      "Upgrade-Insecure-Requests": "1"
+    },
+    "requestTimeoutSeconds": 15,
+    "maxRedirects": 7,
+    "maxDomainsPerRequest": 50,
+    "allowInsecureTLS": false,
+    "maxConcurrentGoroutines": 15,
+    "rateLimitDps": 5,
+    "rateLimitBurst": 3
+  },
+  "logging": {
+    "level": "DEBUG"
+  }
+}
