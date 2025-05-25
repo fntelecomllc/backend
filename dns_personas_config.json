@@ -1,0 +1,89 @@
+[
+    {
+      "id": "global_balanced_random",
+      "name": "Global - Balanced Random",
+      "description": "Spreads load randomly across reliable global DoH/UDP providers. Good default for general use.",
+      "config": {
+        "resolvers": [
+          "https://cloudflare-dns.com/dns-query", "1.1.1.1:53",
+          "https://dns.google/dns-query", "8.8.8.8:53",
+          "https://dns.quad9.net/dns-query", "9.9.9.9:53"
+        ],
+        "useSystemResolvers": false,
+        "queryTimeoutSeconds": 3,
+        "maxDomainsPerRequest": 100,
+        "resolverStrategy": "random_rotation",
+        "resolversWeighted": {},
+        "resolversPreferredOrder": [],
+        "concurrentQueriesPerDomain": 2,
+        "queryDelayMinMs": 10,
+        "queryDelayMaxMs": 80,
+        "maxConcurrentGoroutines": 20,
+        "rateLimitDps": 10.0,
+        "rateLimitBurst": 5
+      }
+    },
+    {
+      "id": "global_stealth_sequential",
+      "name": "Global - Stealth Optimized (Sequential - Updated)",
+      "description": "Maximizes privacy by trying encrypted, privacy-focused resolvers first, with failover. Prioritizes known compatible DoH.",
+      "config": {
+        "resolvers": [
+          "https://cloudflare-dns.com/dns-query",
+          "https://dns.google/dns-query",
+          "https://dns.adguard-dns.com/dns-query",
+          "https://dns.mullvad.net/dns-query",
+          "https://dns.quad9.net/dns-query",
+          "1.1.1.1:53",
+          "9.9.9.9:53",
+          "8.8.8.8:53"
+        ],
+        "useSystemResolvers": false,
+        "queryTimeoutSeconds": 3,
+        "maxDomainsPerRequest": 100,
+        "resolverStrategy": "sequential_failover",
+        "resolversWeighted": {},
+        "resolversPreferredOrder": [
+          "https://cloudflare-dns.com/dns-query",
+          "https://dns.google/dns-query",
+          "https://dns.adguard-dns.com/dns-query",
+          "https://dns.mullvad.net/dns-query",
+          "https://dns.quad9.net/dns-query",
+          "1.1.1.1:53"
+        ],
+        "concurrentQueriesPerDomain": 1,
+        "queryDelayMinMs": 20,
+        "queryDelayMaxMs": 120,
+        "maxConcurrentGoroutines": 15,
+        "rateLimitDps": 5.0,
+        "rateLimitBurst": 3
+      }
+    },
+    {
+      "id": "global_stealth_random",
+      "name": "Global - Stealth Optimized (Sequential)",
+      "description": "Maximizes privacy by trying encrypted, privacy-focused resolvers first, with failover.",
+      "config": {
+        "resolvers": [
+          "https://dns.adguard-dns.com/dns-query", "https://dns.mullvad.net/dns-query",
+          "https://dns.quad9.net/dns-query", "https://cloudflare-dns.com/dns-query",
+          "https://dns.google/dns-query", "1.1.1.1:53", "9.9.9.9:53", "8.8.8.8:53"
+        ],
+        "useSystemResolvers": false,
+        "queryTimeoutSeconds": 3,
+        "maxDomainsPerRequest": 100,
+        "resolverStrategy": "sequential_failover",
+        "resolversWeighted": {},
+        "resolversPreferredOrder": [
+          "https://dns.adguard-dns.com/dns-query", "https://dns.mullvad.net/dns-query",
+          "https://dns.quad9.net/dns-query", "https://cloudflare-dns.com/dns-query"
+        ],
+        "concurrentQueriesPerDomain": 1,
+        "queryDelayMinMs": 20,
+        "queryDelayMaxMs": 120,
+        "maxConcurrentGoroutines": 15,
+        "rateLimitDps": 2.0,
+        "rateLimitBurst": 2
+      }
+    }
+  ]

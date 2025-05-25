@@ -1,841 +1,335 @@
 [
-  {
-    "id": "chrome_win10_latest",
-    "name": "Chrome Latest on Windows 10",
-    "description": "Emulates a common user running up-to-date Google Chrome on Windows 10.",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Accept-Language": "en-US,en;q=0.9",
-      "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"",
-      "Sec-Ch-Ua-Mobile": "?0",
-      "Sec-Ch-Ua-Platform": "\"Windows\"",
-      "Sec-Fetch-Dest": "document",
-      "Sec-Fetch-Mode": "navigate",
-      "Sec-Fetch-Site": "none",
-      "Sec-Fetch-User": "?1",
-      "Upgrade-Insecure-Requests": "1"
-    },
-    "headerOrder": [
-      "Host",
-      "Connection",
-      "Upgrade-Insecure-Requests",
-      "User-Agent",
-      "Accept",
-      "Sec-Ch-Ua",
-      "Sec-Ch-Ua-Mobile",
-      "Sec-Ch-Ua-Platform",
-      "Accept-Encoding",
-      "Accept-Language",
-      "Sec-Fetch-Site",
-      "Sec-Fetch-Mode",
-      "Sec-Fetch-Dest",
-      "Sec-Fetch-User"
-    ],
-    "tlsClientHello": {
-      "minVersion": "TLS12",
-      "maxVersion": "TLS13",
-      "cipherSuites": [
-        "TLS_AES_128_GCM_SHA256",
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_CHACHA20_POLY1305_SHA256",
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+    {
+      "id": "chrome_win10_latest",
+      "name": "Chrome Latest on Windows 10",
+      "description": "Emulates a common user running up-to-date Google Chrome on Windows 10.",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"",
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": "\"Windows\"",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1"
+      },
+      "headerOrder": [
+        "Host", "Connection", "Upgrade-Insecure-Requests", "User-Agent", "Accept",
+        "Sec-Ch-Ua", "Sec-Ch-Ua-Mobile", "Sec-Ch-Ua-Platform",
+        "Accept-Encoding", "Accept-Language", "Sec-Fetch-Site", "Sec-Fetch-Mode",
+        "Sec-Fetch-Dest", "Sec-Fetch-User"
       ],
-      "curvePreferences": [
-        "X25519",
-        "CurveP256",
-        "CurveP384"
-      ]
+      "tlsClientHello": {
+        "minVersion": "TLS12", "maxVersion": "TLS13",
+        "cipherSuites": ["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"],
+        "curvePreferences": ["X25519", "CurveP256", "CurveP384"]
+      },
+      "http2Settings": { "enabled": true },
+      "cookieHandling": { "mode": "session" },
+      "rateLimitDps": 10.0,
+      "rateLimitBurst": 5,
+      "notes": "Highly common, standard desktop profile."
     },
-    "http2Settings": {
-      "enabled": true
+    {
+      "id": "firefox_macos_latest",
+      "name": "Firefox Latest on macOS",
+      "description": "Emulates a user running up-to-date Firefox on macOS.",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/120.0",
+      "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.5", "Accept-Encoding": "gzip, deflate, br", "Upgrade-Insecure-Requests": "1"
+      },
+      "headerOrder": ["Host", "User-Agent", "Accept", "Accept-Language", "Accept-Encoding", "Connection", "Upgrade-Insecure-Requests"],
+      "tlsClientHello": {
+        "minVersion": "TLS12", "maxVersion": "TLS13",
+        "cipherSuites": ["TLS_AES_128_GCM_SHA256", "TLS_CHACHA20_POLY1305_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"],
+        "curvePreferences": ["X25519", "CurveP256"]
+      },
+      "http2Settings": { "enabled": true },
+      "cookieHandling": { "mode": "session" },
+      "rateLimitDps": 8.0,
+      "rateLimitBurst": 4,
+      "notes": "Distinct TLS profile and header order."
     },
-    "cookieHandling": {
-      "mode": "session"
+    {
+      "id": "safari_macos_latest",
+      "name": "Safari Latest on macOS",
+      "description": "Emulates a user running up-to-date Safari on macOS.",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15",
+      "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.9", "Accept-Encoding": "gzip, deflate, br", "Upgrade-Insecure-Requests": "1"
+      },
+      "headerOrder": ["Host", "User-Agent", "Accept", "Accept-Encoding", "Accept-Language", "Connection", "Upgrade-Insecure-Requests"],
+      "tlsClientHello": {
+        "minVersion": "TLS12", "maxVersion": "TLS13",
+        "cipherSuites": ["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"],
+        "curvePreferences": ["X25519", "CurveP256"]
+      },
+      "http2Settings": { "enabled": true },
+      "cookieHandling": { "mode": "session" },
+      "rateLimitDps": 7.0,
+      "rateLimitBurst": 3,
+      "notes": "Distinct WebKit profile."
     },
-    "notes": "Highly common, standard desktop profile.",
-    "rateLimitDps": 10,
-    "rateLimitBurst": 5
-  },
-  {
-    "id": "firefox_macos_latest",
-    "name": "Firefox Latest on macOS",
-    "description": "Emulates a user running up-to-date Firefox on macOS.",
-    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/120.0",
-    "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Accept-Language": "en-US,en;q=0.5",
-      "Upgrade-Insecure-Requests": "1"
+    {
+      "id": "edge_win11_latest",
+      "name": "Edge Latest on Windows 11",
+      "description": "Emulates Microsoft Edge on Windows 11.",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.2210.91",
+      "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7", "Accept-Language": "en-US,en;q=0.9", "Accept-Encoding": "gzip, deflate, br", "Upgrade-Insecure-Requests": "1",
+        "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Microsoft Edge\";v=\"120\"", "Sec-Ch-Ua-Mobile": "?0", "Sec-Ch-Ua-Platform": "\"Windows\"",
+        "Sec-Fetch-Dest": "document", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "none", "Sec-Fetch-User": "?1"
+      },
+      "headerOrder": ["Host", "Connection", "Upgrade-Insecure-Requests", "User-Agent", "Accept", "Sec-Ch-Ua", "Sec-Ch-Ua-Mobile", "Sec-Ch-Ua-Platform", "Accept-Encoding", "Accept-Language", "Sec-Fetch-Site", "Sec-Fetch-Mode", "Sec-Fetch-Dest", "Sec-Fetch-User"],
+      "tlsClientHello": {
+        "minVersion": "TLS12", "maxVersion": "TLS13",
+        "cipherSuites": ["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"],
+        "curvePreferences": ["X25519", "CurveP256", "CurveP384"]
+      },
+      "http2Settings": { "enabled": true },
+      "cookieHandling": { "mode": "session" },
+      "rateLimitDps": 10.0,
+      "rateLimitBurst": 5,
+      "notes": "Edge-specific Client Hint brand."
     },
-    "headerOrder": [
-      "Host",
-      "User-Agent",
-      "Accept",
-      "Accept-Language",
-      "Accept-Encoding",
-      "Connection",
-      "Upgrade-Insecure-Requests"
-    ],
-    "tlsClientHello": {
-      "minVersion": "TLS12",
-      "maxVersion": "TLS13",
-      "cipherSuites": [
-        "TLS_AES_128_GCM_SHA256",
-        "TLS_CHACHA20_POLY1305_SHA256",
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
-        "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
-      ],
-      "curvePreferences": [
-        "X25519",
-        "CurveP256"
-      ]
+    {
+      "id": "chrome_android_latest",
+      "name": "Chrome Latest on Android Mobile",
+      "description": "Emulates Chrome on a recent Android phone.",
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.144 Mobile Safari/537.36",
+      "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7", "Accept-Language": "en-US,en;q=0.9", "Accept-Encoding": "gzip, deflate, br", "Upgrade-Insecure-Requests": "1",
+        "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"", "Sec-Ch-Ua-Mobile": "?1", "Sec-Ch-Ua-Platform": "\"Android\"",
+        "Sec-Fetch-Dest": "document", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "none", "Sec-Fetch-User": "?1"
+      },
+      "headerOrder": ["Host", "Connection", "Upgrade-Insecure-Requests", "User-Agent", "Accept", "Sec-Ch-Ua", "Sec-Ch-Ua-Mobile", "Sec-Ch-Ua-Platform", "Accept-Encoding", "Accept-Language", "Sec-Fetch-Site", "Sec-Fetch-Mode", "Sec-Fetch-Dest", "Sec-Fetch-User"],
+      "tlsClientHello": {
+        "minVersion": "TLS12", "maxVersion": "TLS13",
+        "cipherSuites": ["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"],
+        "curvePreferences": ["X25519", "CurveP256", "CurveP384"]
+      },
+      "http2Settings": { "enabled": true },
+      "cookieHandling": { "mode": "session" },
+      "rateLimitDps": 12.0,
+      "rateLimitBurst": 6,
+      "notes": "Mobile UA and Client Hint."
     },
-    "http2Settings": {
-      "enabled": true
+    {
+      "id": "safari_ios_latest",
+      "name": "Safari Latest on iOS Mobile",
+      "description": "Emulates Safari on an iPhone.",
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1",
+      "headers": { "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.9", "Accept-Encoding": "gzip, deflate, br", "Connection": "keep-alive" },
+      "headerOrder": ["Host", "User-Agent", "Accept", "Accept-Encoding", "Accept-Language", "Connection"],
+      "tlsClientHello": {
+        "minVersion": "TLS12", "maxVersion": "TLS13",
+        "cipherSuites": ["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"],
+        "curvePreferences": ["X25519", "CurveP256"]
+      },
+      "http2Settings": { "enabled": true },
+      "cookieHandling": { "mode": "session" },
+      "rateLimitDps": 7.0,
+      "rateLimitBurst": 4,
+      "notes": "iOS-specific WebKit profile."
     },
-    "cookieHandling": {
-      "mode": "session"
+    {
+      "id": "samsunginternet_android_latest",
+      "name": "Samsung Internet Latest on Android",
+      "description": "Emulates Samsung's browser on an Android phone.",
+      "userAgent": "Mozilla/5.0 (Linux; Android 13; SM-A536W) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/23.0 Chrome/115.0.0.0 Mobile Safari/537.36",
+      "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7", "Accept-Language": "en-US,en;q=0.9", "Accept-Encoding": "gzip, deflate, br", "Upgrade-Insecure-Requests": "1",
+        "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"115\", \"Samsung Internet\";v=\"23\"", "Sec-Ch-Ua-Mobile": "?1", "Sec-Ch-Ua-Platform": "\"Android\"",
+        "Sec-Fetch-Dest": "document", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "none", "Sec-Fetch-User": "?1"
+      },
+      "headerOrder": ["Host", "Connection", "Upgrade-Insecure-Requests", "User-Agent", "Accept", "Sec-Ch-Ua", "Sec-Ch-Ua-Mobile", "Sec-Ch-Ua-Platform", "Accept-Encoding", "Accept-Language", "Sec-Fetch-Site", "Sec-Fetch-Mode", "Sec-Fetch-Dest", "Sec-Fetch-User"],
+      "tlsClientHello": {
+        "minVersion": "TLS12", "maxVersion": "TLS13",
+        "cipherSuites": ["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"],
+        "curvePreferences": ["X25519", "CurveP256", "CurveP384"]
+      },
+      "http2Settings": { "enabled": true },
+      "cookieHandling": { "mode": "session" },
+      "rateLimitDps": 12.0,
+      "rateLimitBurst": 6,
+      "notes": "Samsung specific Client Hint brand."
     },
-    "notes": "Distinct TLS profile and header order.",
-    "rateLimitDps": 8,
-    "rateLimitBurst": 4
-  },
-  {
-    "id": "safari_macos_latest",
-    "name": "Safari Latest on macOS",
-    "description": "Emulates a user running up-to-date Safari on macOS.",
-    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15",
-    "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Accept-Language": "en-US,en;q=0.9",
-      "Upgrade-Insecure-Requests": "1"
+    {
+      "id": "corporate_edge_win10_older",
+      "name": "Corporate Edge on Windows 10 (Older)",
+      "description": "Emulates a corporate user with slightly older Edge.",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.2151.58",
+      "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7", "Accept-Language": "en-US,en;q=0.9,fr;q=0.8,de;q=0.7", "Accept-Encoding": "gzip, deflate, br", "Upgrade-Insecure-Requests": "1", "DNT": "1",
+        "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"119\", \"Microsoft Edge\";v=\"119\"", "Sec-Ch-Ua-Mobile": "?0", "Sec-Ch-Ua-Platform": "\"Windows\"",
+        "Sec-Fetch-Dest": "document", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "none", "Sec-Fetch-User": "?1"
+      },
+      "headerOrder": ["Host", "Connection", "Upgrade-Insecure-Requests", "User-Agent", "Accept", "Sec-Ch-Ua", "Sec-Ch-Ua-Mobile", "Sec-Ch-Ua-Platform", "Accept-Encoding", "Accept-Language", "DNT", "Sec-Fetch-Site", "Sec-Fetch-Mode", "Sec-Fetch-Dest", "Sec-Fetch-User"],
+      "tlsClientHello": {
+        "minVersion": "TLS12", "maxVersion": "TLS13",
+        "cipherSuites": ["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"],
+        "curvePreferences": ["X25519", "CurveP256", "CurveP384"]
+      },
+      "http2Settings": { "enabled": true },
+      "cookieHandling": { "mode": "session" },
+      "rateLimitDps": 6.0,
+      "rateLimitBurst": 3,
+      "notes": "Includes DNT header."
     },
-    "headerOrder": [
-      "Host",
-      "User-Agent",
-      "Accept",
-      "Accept-Encoding",
-      "Accept-Language",
-      "Connection",
-      "Upgrade-Insecure-Requests"
-    ],
-    "tlsClientHello": {
-      "minVersion": "TLS12",
-      "maxVersion": "TLS13",
-      "cipherSuites": [
-        "TLS_AES_128_GCM_SHA256",
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_CHACHA20_POLY1305_SHA256",
-        "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
-      ],
-      "curvePreferences": [
-        "X25519",
-        "CurveP256"
-      ]
+    {
+      "id": "headless_chrome_detectable",
+      "name": "Headless Chrome (Detectable Signature)",
+      "description": "Emulates standard detectable headless Chrome.",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/120.0.6099.109 Safari/537.36",
+      "headers": { "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language": "en-US", "Accept-Encoding": "gzip, deflate, br", "Connection": "keep-alive" },
+      "headerOrder": ["Host", "Connection", "User-Agent", "Accept", "Accept-Encoding", "Accept-Language"],
+      "tlsClientHello": {
+        "minVersion": "TLS12", "maxVersion": "TLS13",
+        "cipherSuites": ["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"],
+        "curvePreferences": ["X25519", "CurveP256", "CurveP384"]
+      },
+      "http2Settings": { "enabled": true },
+      "cookieHandling": { "mode": "session" },
+      "rateLimitDps": 20.0,
+      "rateLimitBurst": 10,
+      "notes": "Contains 'HeadlessChrome' token in UA."
     },
-    "http2Settings": {
-      "enabled": true
+    {
+      "id": "stealth_chrome_advanced",
+      "name": "Stealth Chrome (Advanced Emulation)",
+      "description": "Emulates highly realistic, non-headless Chrome.",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7", "Accept-Language": "en-US,en;q=0.9", "Accept-Encoding": "gzip, deflate, br", "Upgrade-Insecure-Requests": "1",
+        "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"", "Sec-Ch-Ua-Mobile": "?0", "Sec-Ch-Ua-Platform": "\"Windows\"",
+        "Sec-Fetch-Dest": "document", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "none", "Sec-Fetch-User": "?1"
+      },
+      "headerOrder": ["Host", "Connection", "Upgrade-Insecure-Requests", "User-Agent", "Accept", "Sec-Ch-Ua", "Sec-Ch-Ua-Mobile", "Sec-Ch-Ua-Platform", "Accept-Encoding", "Accept-Language", "Sec-Fetch-Site", "Sec-Fetch-Mode", "Sec-Fetch-Dest", "Sec-Fetch-User"],
+      "tlsClientHello": {
+        "minVersion": "TLS12", "maxVersion": "TLS13",
+        "cipherSuites": ["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"],
+        "curvePreferences": ["X25519", "CurveP256", "CurveP384"]
+      },
+      "http2Settings": { "enabled": true },
+      "cookieHandling": { "mode": "session" },
+      "rateLimitDps": 10.0,
+      "rateLimitBurst": 5,
+      "notes": "Aims for full indistinguishability."
     },
-    "cookieHandling": {
-      "mode": "session"
+    {
+      "id": "legacy_android_chrome",
+      "name": "Legacy Chrome on Android 7",
+      "description": "Emulates older Android Chrome.",
+      "userAgent": "Mozilla/5.0 (Linux; Android 7.0; SM-G930V) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36",
+      "headers": { "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.8", "Accept-Encoding": "gzip, deflate", "Upgrade-Insecure-Requests": "1", "Connection": "keep-alive"},
+      "headerOrder": ["Host", "Connection", "Upgrade-Insecure-Requests", "User-Agent", "Accept", "Accept-Encoding", "Accept-Language"],
+      "tlsClientHello": {
+        "minVersion": "TLS11", "maxVersion": "TLS12",
+        "cipherSuites": ["TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", "TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"],
+        "curvePreferences": ["X25519", "CurveP256"]
+      },
+      "http2Settings": { "enabled": true },
+      "cookieHandling": { "mode": "session" },
+      "rateLimitDps": 4.0,
+      "rateLimitBurst": 2,
+      "notes": "Older Chrome/Android. Distinct headers/TLS."
     },
-    "notes": "Distinct WebKit profile.",
-    "rateLimitDps": 7,
-    "rateLimitBurst": 3
-  },
-  {
-    "id": "edge_win11_latest",
-    "name": "Edge Latest on Windows 11",
-    "description": "Emulates Microsoft Edge on Windows 11.",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.2210.91",
-    "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Accept-Language": "en-US,en;q=0.9",
-      "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Microsoft Edge\";v=\"120\"",
-      "Sec-Ch-Ua-Mobile": "?0",
-      "Sec-Ch-Ua-Platform": "\"Windows\"",
-      "Sec-Fetch-Dest": "document",
-      "Sec-Fetch-Mode": "navigate",
-      "Sec-Fetch-Site": "none",
-      "Sec-Fetch-User": "?1",
-      "Upgrade-Insecure-Requests": "1"
+    {
+      "id": "legacy_firefox_win7",
+      "name": "Legacy Firefox on Windows 7",
+      "description": "Emulates older Firefox on Windows 7.",
+      "userAgent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:78.0) Gecko/20100101 Firefox/78.0",
+      "headers": { "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.5", "Accept-Encoding": "gzip, deflate", "Upgrade-Insecure-Requests": "1", "Connection": "keep-alive"},
+      "headerOrder": ["Host", "User-Agent", "Accept", "Accept-Language", "Accept-Encoding", "Connection", "Upgrade-Insecure-Requests"],
+      "tlsClientHello": {
+        "minVersion": "TLS12", "maxVersion": "TLS12",
+        "cipherSuites": ["TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384", "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"],
+        "curvePreferences": ["X25519", "CurveP256"]
+      },
+      "http2Settings": { "enabled": true },
+      "cookieHandling": { "mode": "session" },
+      "rateLimitDps": 3.0,
+      "rateLimitBurst": 2,
+      "notes": "Older Firefox on deprecated OS."
     },
-    "headerOrder": [
-      "Host",
-      "Connection",
-      "Upgrade-Insecure-Requests",
-      "User-Agent",
-      "Accept",
-      "Sec-Ch-Ua",
-      "Sec-Ch-Ua-Mobile",
-      "Sec-Ch-Ua-Platform",
-      "Accept-Encoding",
-      "Accept-Language",
-      "Sec-Fetch-Site",
-      "Sec-Fetch-Mode",
-      "Sec-Fetch-Dest",
-      "Sec-Fetch-User"
-    ],
-    "tlsClientHello": {
-      "minVersion": "TLS12",
-      "maxVersion": "TLS13",
-      "cipherSuites": [
-        "TLS_AES_128_GCM_SHA256",
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_CHACHA20_POLY1305_SHA256",
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
-      ],
-      "curvePreferences": [
-        "X25519",
-        "CurveP256",
-        "CurveP384"
-      ]
+     {
+      "id": "chrome_linux_latest",
+      "name": "Chrome Latest on Linux",
+      "description": "Emulates Chrome on Linux.",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7", "Accept-Language": "en-US,en;q=0.9", "Accept-Encoding": "gzip, deflate, br", "Upgrade-Insecure-Requests": "1",
+        "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"", "Sec-Ch-Ua-Mobile": "?0", "Sec-Ch-Ua-Platform": "\"Linux\"",
+        "Sec-Fetch-Dest": "document", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "none", "Sec-Fetch-User": "?1"
+      },
+      "headerOrder": ["Host", "Connection", "Upgrade-Insecure-Requests", "User-Agent", "Accept", "Sec-Ch-Ua", "Sec-Ch-Ua-Mobile", "Sec-Ch-Ua-Platform", "Accept-Encoding", "Accept-Language", "Sec-Fetch-Site", "Sec-Fetch-Mode", "Sec-Fetch-Dest", "Sec-Fetch-User"],
+      "tlsClientHello": {
+        "minVersion": "TLS12", "maxVersion": "TLS13",
+        "cipherSuites": ["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"],
+        "curvePreferences": ["X25519", "CurveP256", "CurveP384"]
+      },
+      "http2Settings": { "enabled": true },
+      "cookieHandling": { "mode": "session" },
+      "rateLimitDps": 10.0,
+      "rateLimitBurst": 5,
+      "notes": "Linux specific UA and Client Hint platform."
     },
-    "http2Settings": {
-      "enabled": true
+     {
+      "id": "firefox_win10_latest",
+      "name": "Firefox Latest on Windows 10",
+      "description": "Emulates Firefox on Windows 10.",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/120.0",
+      "headers": { "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.5", "Accept-Encoding": "gzip, deflate, br", "Upgrade-Insecure-Requests": "1" },
+      "headerOrder": ["Host", "User-Agent", "Accept", "Accept-Language", "Accept-Encoding", "Connection", "Upgrade-Insecure-Requests"],
+      "tlsClientHello": {
+        "minVersion": "TLS12", "maxVersion": "TLS13",
+        "cipherSuites": ["TLS_AES_128_GCM_SHA256", "TLS_CHACHA20_POLY1305_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"],
+        "curvePreferences": ["X25519", "CurveP256"]
+      },
+      "http2Settings": { "enabled": true },
+      "cookieHandling": { "mode": "session" },
+      "rateLimitDps": 8.0,
+      "rateLimitBurst": 4,
+      "notes": "Firefox on Windows."
     },
-    "cookieHandling": {
-      "mode": "session"
+    {
+      "id": "mobile_firefox_android",
+      "name": "Firefox Mobile on Android",
+      "description": "Emulates Firefox on an Android phone.",
+      "userAgent": "Mozilla/5.0 (Android 10; Mobile; rv:109.0) Gecko/115.0 Firefox/115.0",
+      "headers": { "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.5", "Accept-Encoding": "gzip, deflate, br", "Upgrade-Insecure-Requests": "1" },
+      "headerOrder": ["Host", "User-Agent", "Accept", "Accept-Language", "Accept-Encoding", "Connection", "Upgrade-Insecure-Requests"],
+      "tlsClientHello": {
+        "minVersion": "TLS12", "maxVersion": "TLS13",
+        "cipherSuites": ["TLS_AES_128_GCM_SHA256", "TLS_CHACHA20_POLY1305_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"],
+        "curvePreferences": ["X25519", "CurveP256"]
+      },
+      "http2Settings": { "enabled": true },
+      "cookieHandling": { "mode": "session" },
+      "rateLimitDps": 9.0,
+      "rateLimitBurst": 5,
+      "notes": "Mobile Firefox profile."
     },
-    "notes": "Edge-specific Client Hint brand.",
-    "rateLimitDps": 10,
-    "rateLimitBurst": 5
-  },
-  {
-    "id": "chrome_android_latest",
-    "name": "Chrome Latest on Android Mobile",
-    "description": "Emulates Chrome on a recent Android phone.",
-    "userAgent": "Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.144 Mobile Safari/537.36",
-    "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Accept-Language": "en-US,en;q=0.9",
-      "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"",
-      "Sec-Ch-Ua-Mobile": "?1",
-      "Sec-Ch-Ua-Platform": "\"Android\"",
-      "Sec-Fetch-Dest": "document",
-      "Sec-Fetch-Mode": "navigate",
-      "Sec-Fetch-Site": "none",
-      "Sec-Fetch-User": "?1",
-      "Upgrade-Insecure-Requests": "1"
-    },
-    "headerOrder": [
-      "Host",
-      "Connection",
-      "Upgrade-Insecure-Requests",
-      "User-Agent",
-      "Accept",
-      "Sec-Ch-Ua",
-      "Sec-Ch-Ua-Mobile",
-      "Sec-Ch-Ua-Platform",
-      "Accept-Encoding",
-      "Accept-Language",
-      "Sec-Fetch-Site",
-      "Sec-Fetch-Mode",
-      "Sec-Fetch-Dest",
-      "Sec-Fetch-User"
-    ],
-    "tlsClientHello": {
-      "minVersion": "TLS12",
-      "maxVersion": "TLS13",
-      "cipherSuites": [
-        "TLS_AES_128_GCM_SHA256",
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_CHACHA20_POLY1305_SHA256",
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
-      ],
-      "curvePreferences": [
-        "X25519",
-        "CurveP256",
-        "CurveP384"
-      ]
-    },
-    "http2Settings": {
-      "enabled": true
-    },
-    "cookieHandling": {
-      "mode": "session"
-    },
-    "notes": "Mobile UA and Client Hint.",
-    "rateLimitDps": 12,
-    "rateLimitBurst": 6
-  },
-  {
-    "id": "safari_ios_latest",
-    "name": "Safari Latest on iOS Mobile",
-    "description": "Emulates Safari on an iPhone.",
-    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1",
-    "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Accept-Language": "en-US,en;q=0.9",
-      "Connection": "keep-alive"
-    },
-    "headerOrder": [
-      "Host",
-      "User-Agent",
-      "Accept",
-      "Accept-Encoding",
-      "Accept-Language",
-      "Connection"
-    ],
-    "tlsClientHello": {
-      "minVersion": "TLS12",
-      "maxVersion": "TLS13",
-      "cipherSuites": [
-        "TLS_AES_128_GCM_SHA256",
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_CHACHA20_POLY1305_SHA256",
-        "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
-      ],
-      "curvePreferences": [
-        "X25519",
-        "CurveP256"
-      ]
-    },
-    "http2Settings": {
-      "enabled": true
-    },
-    "cookieHandling": {
-      "mode": "session"
-    },
-    "notes": "iOS-specific WebKit profile.",
-    "rateLimitDps": 7,
-    "rateLimitBurst": 4
-  },
-  {
-    "id": "samsunginternet_android_latest",
-    "name": "Samsung Internet Latest on Android",
-    "description": "Emulates Samsung's browser on an Android phone.",
-    "userAgent": "Mozilla/5.0 (Linux; Android 13; SM-A536W) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/23.0 Chrome/115.0.0.0 Mobile Safari/537.36",
-    "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Accept-Language": "en-US,en;q=0.9",
-      "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"115\", \"Samsung Internet\";v=\"23\"",
-      "Sec-Ch-Ua-Mobile": "?1",
-      "Sec-Ch-Ua-Platform": "\"Android\"",
-      "Sec-Fetch-Dest": "document",
-      "Sec-Fetch-Mode": "navigate",
-      "Sec-Fetch-Site": "none",
-      "Sec-Fetch-User": "?1",
-      "Upgrade-Insecure-Requests": "1"
-    },
-    "headerOrder": [
-      "Host",
-      "Connection",
-      "Upgrade-Insecure-Requests",
-      "User-Agent",
-      "Accept",
-      "Sec-Ch-Ua",
-      "Sec-Ch-Ua-Mobile",
-      "Sec-Ch-Ua-Platform",
-      "Accept-Encoding",
-      "Accept-Language",
-      "Sec-Fetch-Site",
-      "Sec-Fetch-Mode",
-      "Sec-Fetch-Dest",
-      "Sec-Fetch-User"
-    ],
-    "tlsClientHello": {
-      "minVersion": "TLS12",
-      "maxVersion": "TLS13",
-      "cipherSuites": [
-        "TLS_AES_128_GCM_SHA256",
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_CHACHA20_POLY1305_SHA256",
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
-      ],
-      "curvePreferences": [
-        "X25519",
-        "CurveP256",
-        "CurveP384"
-      ]
-    },
-    "http2Settings": {
-      "enabled": true
-    },
-    "cookieHandling": {
-      "mode": "session"
-    },
-    "notes": "Samsung specific Client Hint brand.",
-    "rateLimitDps": 12,
-    "rateLimitBurst": 6
-  },
-  {
-    "id": "corporate_edge_win10_older",
-    "name": "Corporate Edge on Windows 10 (Older)",
-    "description": "Emulates a corporate user with slightly older Edge.",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.2151.58",
-    "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Accept-Language": "en-US,en;q=0.9,fr;q=0.8,de;q=0.7",
-      "DNT": "1",
-      "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"119\", \"Microsoft Edge\";v=\"119\"",
-      "Sec-Ch-Ua-Mobile": "?0",
-      "Sec-Ch-Ua-Platform": "\"Windows\"",
-      "Sec-Fetch-Dest": "document",
-      "Sec-Fetch-Mode": "navigate",
-      "Sec-Fetch-Site": "none",
-      "Sec-Fetch-User": "?1",
-      "Upgrade-Insecure-Requests": "1"
-    },
-    "headerOrder": [
-      "Host",
-      "Connection",
-      "Upgrade-Insecure-Requests",
-      "User-Agent",
-      "Accept",
-      "Sec-Ch-Ua",
-      "Sec-Ch-Ua-Mobile",
-      "Sec-Ch-Ua-Platform",
-      "Accept-Encoding",
-      "Accept-Language",
-      "DNT",
-      "Sec-Fetch-Site",
-      "Sec-Fetch-Mode",
-      "Sec-Fetch-Dest",
-      "Sec-Fetch-User"
-    ],
-    "tlsClientHello": {
-      "minVersion": "TLS12",
-      "maxVersion": "TLS13",
-      "cipherSuites": [
-        "TLS_AES_128_GCM_SHA256",
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_CHACHA20_POLY1305_SHA256",
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
-      ],
-      "curvePreferences": [
-        "X25519",
-        "CurveP256",
-        "CurveP384"
-      ]
-    },
-    "http2Settings": {
-      "enabled": true
-    },
-    "cookieHandling": {
-      "mode": "session"
-    },
-    "notes": "Includes DNT header.",
-    "rateLimitDps": 6,
-    "rateLimitBurst": 3
-  },
-  {
-    "id": "headless_chrome_detectable",
-    "name": "Headless Chrome (Detectable Signature)",
-    "description": "Emulates standard detectable headless Chrome.",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/120.0.6099.109 Safari/537.36",
-    "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Accept-Language": "en-US",
-      "Connection": "keep-alive"
-    },
-    "headerOrder": [
-      "Host",
-      "Connection",
-      "User-Agent",
-      "Accept",
-      "Accept-Encoding",
-      "Accept-Language"
-    ],
-    "tlsClientHello": {
-      "minVersion": "TLS12",
-      "maxVersion": "TLS13",
-      "cipherSuites": [
-        "TLS_AES_128_GCM_SHA256",
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_CHACHA20_POLY1305_SHA256",
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
-      ],
-      "curvePreferences": [
-        "X25519",
-        "CurveP256",
-        "CurveP384"
-      ]
-    },
-    "http2Settings": {
-      "enabled": true
-    },
-    "cookieHandling": {
-      "mode": "session"
-    },
-    "notes": "Contains 'HeadlessChrome' token in UA.",
-    "rateLimitDps": 20,
-    "rateLimitBurst": 10
-  },
-  {
-    "id": "stealth_chrome_advanced",
-    "name": "Stealth Chrome (Advanced Emulation)",
-    "description": "Emulates highly realistic, non-headless Chrome.",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Accept-Language": "en-US,en;q=0.9",
-      "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"",
-      "Sec-Ch-Ua-Mobile": "?0",
-      "Sec-Ch-Ua-Platform": "\"Windows\"",
-      "Sec-Fetch-Dest": "document",
-      "Sec-Fetch-Mode": "navigate",
-      "Sec-Fetch-Site": "none",
-      "Sec-Fetch-User": "?1",
-      "Upgrade-Insecure-Requests": "1"
-    },
-    "headerOrder": [
-      "Host",
-      "Connection",
-      "Upgrade-Insecure-Requests",
-      "User-Agent",
-      "Accept",
-      "Sec-Ch-Ua",
-      "Sec-Ch-Ua-Mobile",
-      "Sec-Ch-Ua-Platform",
-      "Accept-Encoding",
-      "Accept-Language",
-      "Sec-Fetch-Site",
-      "Sec-Fetch-Mode",
-      "Sec-Fetch-Dest",
-      "Sec-Fetch-User"
-    ],
-    "tlsClientHello": {
-      "minVersion": "TLS12",
-      "maxVersion": "TLS13",
-      "cipherSuites": [
-        "TLS_AES_128_GCM_SHA256",
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_CHACHA20_POLY1305_SHA256",
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
-      ],
-      "curvePreferences": [
-        "X25519",
-        "CurveP256",
-        "CurveP384"
-      ]
-    },
-    "http2Settings": {
-      "enabled": true
-    },
-    "cookieHandling": {
-      "mode": "session"
-    },
-    "notes": "Aims for full indistinguishability.",
-    "rateLimitDps": 10,
-    "rateLimitBurst": 5
-  },
-  {
-    "id": "legacy_android_chrome",
-    "name": "Legacy Chrome on Android 7",
-    "description": "Emulates older Android Chrome.",
-    "userAgent": "Mozilla/5.0 (Linux; Android 7.0; SM-G930V) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36",
-    "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-      "Accept-Encoding": "gzip, deflate",
-      "Accept-Language": "en-US,en;q=0.8",
-      "Connection": "keep-alive",
-      "Upgrade-Insecure-Requests": "1"
-    },
-    "headerOrder": [
-      "Host",
-      "Connection",
-      "Upgrade-Insecure-Requests",
-      "User-Agent",
-      "Accept",
-      "Accept-Encoding",
-      "Accept-Language"
-    ],
-    "tlsClientHello": {
-      "minVersion": "TLS11",
-      "maxVersion": "TLS12",
-      "cipherSuites": [
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_AES_128_GCM_SHA256",
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
-      ],
-      "curvePreferences": [
-        "X25519",
-        "CurveP256"
-      ]
-    },
-    "http2Settings": {
-      "enabled": true
-    },
-    "cookieHandling": {
-      "mode": "session"
-    },
-    "notes": "Older Chrome/Android. Distinct headers/TLS.",
-    "rateLimitDps": 4,
-    "rateLimitBurst": 2
-  },
-  {
-    "id": "legacy_firefox_win7",
-    "name": "Legacy Firefox on Windows 7",
-    "description": "Emulates older Firefox on Windows 7.",
-    "userAgent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:78.0) Gecko/20100101 Firefox/78.0",
-    "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-      "Accept-Encoding": "gzip, deflate",
-      "Accept-Language": "en-US,en;q=0.5",
-      "Connection": "keep-alive",
-      "Upgrade-Insecure-Requests": "1"
-    },
-    "headerOrder": [
-      "Host",
-      "User-Agent",
-      "Accept",
-      "Accept-Language",
-      "Accept-Encoding",
-      "Connection",
-      "Upgrade-Insecure-Requests"
-    ],
-    "tlsClientHello": {
-      "minVersion": "TLS12",
-      "maxVersion": "TLS12",
-      "cipherSuites": [
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
-      ],
-      "curvePreferences": [
-        "X25519",
-        "CurveP256"
-      ]
-    },
-    "http2Settings": {
-      "enabled": true
-    },
-    "cookieHandling": {
-      "mode": "session"
-    },
-    "notes": "Older Firefox on deprecated OS.",
-    "rateLimitDps": 3,
-    "rateLimitBurst": 2
-  },
-  {
-    "id": "chrome_linux_latest",
-    "name": "Chrome Latest on Linux",
-    "description": "Emulates Chrome on Linux.",
-    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Accept-Language": "en-US,en;q=0.9",
-      "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"",
-      "Sec-Ch-Ua-Mobile": "?0",
-      "Sec-Ch-Ua-Platform": "\"Linux\"",
-      "Sec-Fetch-Dest": "document",
-      "Sec-Fetch-Mode": "navigate",
-      "Sec-Fetch-Site": "none",
-      "Sec-Fetch-User": "?1",
-      "Upgrade-Insecure-Requests": "1"
-    },
-    "headerOrder": [
-      "Host",
-      "Connection",
-      "Upgrade-Insecure-Requests",
-      "User-Agent",
-      "Accept",
-      "Sec-Ch-Ua",
-      "Sec-Ch-Ua-Mobile",
-      "Sec-Ch-Ua-Platform",
-      "Accept-Encoding",
-      "Accept-Language",
-      "Sec-Fetch-Site",
-      "Sec-Fetch-Mode",
-      "Sec-Fetch-Dest",
-      "Sec-Fetch-User"
-    ],
-    "tlsClientHello": {
-      "minVersion": "TLS12",
-      "maxVersion": "TLS13",
-      "cipherSuites": [
-        "TLS_AES_128_GCM_SHA256",
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_CHACHA20_POLY1305_SHA256",
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
-      ],
-      "curvePreferences": [
-        "X25519",
-        "CurveP256",
-        "CurveP384"
-      ]
-    },
-    "http2Settings": {
-      "enabled": true
-    },
-    "cookieHandling": {
-      "mode": "session"
-    },
-    "notes": "Linux specific UA and Client Hint platform.",
-    "rateLimitDps": 10,
-    "rateLimitBurst": 5
-  },
-  {
-    "id": "firefox_win10_latest",
-    "name": "Firefox Latest on Windows 10",
-    "description": "Emulates Firefox on Windows 10.",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/120.0",
-    "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Accept-Language": "en-US,en;q=0.5",
-      "Upgrade-Insecure-Requests": "1"
-    },
-    "headerOrder": [
-      "Host",
-      "User-Agent",
-      "Accept",
-      "Accept-Language",
-      "Accept-Encoding",
-      "Connection",
-      "Upgrade-Insecure-Requests"
-    ],
-    "tlsClientHello": {
-      "minVersion": "TLS12",
-      "maxVersion": "TLS13",
-      "cipherSuites": [
-        "TLS_AES_128_GCM_SHA256",
-        "TLS_CHACHA20_POLY1305_SHA256",
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
-        "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
-      ],
-      "curvePreferences": [
-        "X25519",
-        "CurveP256"
-      ]
-    },
-    "http2Settings": {
-      "enabled": true
-    },
-    "cookieHandling": {
-      "mode": "session"
-    },
-    "notes": "Firefox on Windows.",
-    "rateLimitDps": 8,
-    "rateLimitBurst": 4
-  },
-  {
-    "id": "mobile_firefox_android",
-    "name": "Firefox Mobile on Android",
-    "description": "Emulates Firefox on an Android phone.",
-    "userAgent": "Mozilla/5.0 (Android 10; Mobile; rv:109.0) Gecko/115.0 Firefox/115.0",
-    "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Accept-Language": "en-US,en;q=0.5",
-      "Upgrade-Insecure-Requests": "1"
-    },
-    "headerOrder": [
-      "Host",
-      "User-Agent",
-      "Accept",
-      "Accept-Language",
-      "Accept-Encoding",
-      "Connection",
-      "Upgrade-Insecure-Requests"
-    ],
-    "tlsClientHello": {
-      "minVersion": "TLS12",
-      "maxVersion": "TLS13",
-      "cipherSuites": [
-        "TLS_AES_128_GCM_SHA256",
-        "TLS_CHACHA20_POLY1305_SHA256",
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
-        "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
-      ],
-      "curvePreferences": [
-        "X25519",
-        "CurveP256"
-      ]
-    },
-    "http2Settings": {
-      "enabled": true
-    },
-    "cookieHandling": {
-      "mode": "session"
-    },
-    "notes": "Mobile Firefox profile.",
-    "rateLimitDps": 9,
-    "rateLimitBurst": 5
-  },
-  {
-    "id": "mobile_chrome_ios",
-    "name": "Chrome Mobile on iOS",
-    "description": "Emulates Chrome on an iPhone (WebKit engine).",
-    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.6099.144 Mobile/15E148 Safari/604.1",
-    "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Accept-Language": "en-US,en;q=0.9",
-      "Connection": "keep-alive"
-    },
-    "headerOrder": [
-      "Host",
-      "Connection",
-      "User-Agent",
-      "Accept",
-      "Accept-Encoding",
-      "Accept-Language"
-    ],
-    "tlsClientHello": {
-      "minVersion": "TLS12",
-      "maxVersion": "TLS13",
-      "cipherSuites": [
-        "TLS_AES_128_GCM_SHA256",
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_CHACHA20_POLY1305_SHA256",
-        "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
-      ],
-      "curvePreferences": [
-        "X25519",
-        "CurveP256"
-      ]
-    },
-    "http2Settings": {
-      "enabled": true
-    },
-    "cookieHandling": {
-      "mode": "session"
-    },
-    "notes": "Chrome on iOS uses WebKit; UA includes 'CriOS'.",
-    "rateLimitDps": 7,
-    "rateLimitBurst": 3
-  }
-]
+     {
+      "id": "mobile_chrome_ios",
+      "name": "Chrome Mobile on iOS",
+      "description": "Emulates Chrome on an iPhone (WebKit engine).",
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.6099.144 Mobile/15E148 Safari/604.1",
+      "headers": { "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7", "Accept-Language": "en-US,en;q=0.9", "Accept-Encoding": "gzip, deflate, br", "Connection": "keep-alive"},
+      "headerOrder": ["Host", "Connection", "User-Agent", "Accept", "Accept-Encoding", "Accept-Language"],
+      "tlsClientHello": {
+        "minVersion": "TLS12", "maxVersion": "TLS13",
+         "cipherSuites": ["TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256" ],
+        "curvePreferences": ["X25519", "CurveP256"]
+      },
+      "http2Settings": { "enabled": true },
+      "cookieHandling": { "mode": "session" },
+      "rateLimitDps": 7.0,
+      "rateLimitBurst": 3,
+      "notes": "Chrome on iOS uses WebKit; UA includes 'CriOS'."
+    }
+  ]

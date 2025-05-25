@@ -9,7 +9,8 @@ import (
 
 	"github.com/fntelecomllc/domainflow/backend/internal/api"
 	"github.com/fntelecomllc/domainflow/backend/internal/config"
-	"github.com/fntelecomllc/domainflow/backend/internal/proxymanager" // Import the new package
+	"github.com/fntelecomllc/domainflow/backend/internal/memorystore" // Updated import
+	"github.com/fntelecomllc/domainflow/backend/internal/proxymanager"
 
 	_ "net/http/pprof" // For profiling, if needed
 )
@@ -63,16 +64,17 @@ func main() {
 	}
 
 	// --- Initialize ProxyManager ---
-	// The health check timeout passed here is for potential future background checks within ProxyManager.
-	// The ProxyManager.TestProxy function uses its own ProxyTestTimeout constant.
 	log.Printf("Main: Initializing ProxyManager with %d configured proxies.", len(appConfig.Proxies))
 	proxyMgr := proxymanager.NewProxyManager(appConfig.Proxies, defaultProxyHealthCheckTimeout)
-	// TODO: In the future, if ProxyManager has a StartBackgroundHealthChecks method:
-	// go proxyMgr.StartBackgroundHealthChecks( /* interval */ )
+
+	// --- Initialize CampaignManager ---
+	log.Println("Main: Initializing InMemoryCampaignStore...")
+	campaignMgr := memorystore.NewInMemoryCampaignStore() // Updated call
 
 	// --- Initialize Router and HTTP Server ---
-	// Pass both appConfig and proxyMgr to NewRouter, which will then pass them to NewAPIHandler.
-	router := api.NewRouter(appConfig, proxyMgr)
+	// Pass appConfig, proxyMgr, and campaignMgr to NewRouter.
+	// NewRouter will then pass them to NewAPIHandler.
+	router := api.NewRouter(appConfig, proxyMgr, campaignMgr)
 	serverAddr := ":" + appConfig.Server.Port
 	httpServer := &http.Server{
 		Handler:      router, Addr: serverAddr,
